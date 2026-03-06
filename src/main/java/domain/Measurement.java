@@ -1,20 +1,32 @@
 package domain;
 
+import domain.MeasurementParam;
+
 import java.time.Instant;
 
-public final class Measurement {
-    public long id;
-    public long sampleId;
-    public MeasurementParam param;
-    public double value;
-    public String unit;
-    public String method;
-    public Instant measuredAt;
+public class Measurement {
 
-    public Measurement(long id, long sampleId, MeasurementParam param,
-                       double value, String unit, String method) {
-        if (unit == null || unit.isBlank()) throw new IllegalArgumentException("unit empty");
-        if (method == null || method.isBlank()) throw new IllegalArgumentException("method empty");
+    private long id;
+    private long sampleId;
+    private MeasurementParam param;
+    private double value;
+    private String unit;
+    private String method;
+    private Instant measuredAt;
+    private String ownerUsername;
+    private Instant createdAt;
+    private Instant updatedAt;
+
+    public Measurement(long id,
+                       long sampleId,
+                       MeasurementParam param,
+                       double value,
+                       String unit,
+                       String method,
+                       Instant measuredAt,
+                       String ownerUsername,
+                       Instant createdAt,
+                       Instant updatedAt) {
 
         this.id = id;
         this.sampleId = sampleId;
@@ -22,16 +34,23 @@ public final class Measurement {
         this.value = value;
         this.unit = unit;
         this.method = method;
-        this.measuredAt = Instant.now();
+        this.measuredAt = measuredAt;
+        this.ownerUsername = ownerUsername;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof Measurement m && id == m.id;
-    }
+    public long getId() { return id; }
+    public long getSampleId() { return sampleId; }
+    public MeasurementParam getParam() { return param; }
+    public double getValue() { return value; }
+    public String getUnit() { return unit; }
+    public String getMethod() { return method; }
+    public Instant getMeasuredAt() { return measuredAt; }
+    public String getOwnerUsername() { return ownerUsername; }
 
-    @Override
-    public int hashCode() {
-        return Long.hashCode(id);
-    }
+    public void setValue(double value) { this.value = value; }
+    public void setUnit(String unit) { this.unit = unit; }
+    public void setMethod(String method) { this.method = method; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }

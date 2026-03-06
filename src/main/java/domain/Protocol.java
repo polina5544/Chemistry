@@ -3,29 +3,32 @@ package domain;
 import java.time.Instant;
 import java.util.Set;
 
-public final class Protocol {
-    public long id;
-    public String name;
-    public Set<MeasurementParam> requiredParams;
-    public Instant createdAt;
+public class Protocol {
 
-    public Protocol(long id, String name, Set<MeasurementParam> params) {
-        if (name == null || name.isBlank()) throw new IllegalArgumentException("Имя пустое");
-        if (params == null || params.isEmpty()) throw new IllegalArgumentException("Нет параметров");
+    private long id;
+    private String name;
+    private Set<MeasurementParam> requiredParams; //Коллекция Set, которая хранит обязательные параметры, Set тк нельзя дублировать параметры
+    private String ownerUsername;
+    private Instant createdAt;
+    private Instant updatedAt;
+
+    public Protocol(long id,
+                    String name,
+                    Set<MeasurementParam> requiredParams,
+                    String ownerUsername,
+                    Instant createdAt,
+                    Instant updatedAt) {
 
         this.id = id;
         this.name = name;
-        this.requiredParams = params;
-        this.createdAt = Instant.now();
+        this.requiredParams = requiredParams;
+        this.ownerUsername = ownerUsername;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof Protocol p && id == p.id;
-    }
-
-    @Override
-    public int hashCode() {
-        return Long.hashCode(id);
-    }
+    public long getId() { return id; }
+    public String getOwnerUsername() { return ownerUsername; }
+    public String getName() { return name; }
+    public Set<MeasurementParam> getRequiredParams() { return requiredParams; }
 }
