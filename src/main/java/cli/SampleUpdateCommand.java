@@ -66,11 +66,12 @@ public class SampleUpdateCommand extends Command {
             String oldLocation = sample.getLocation();
             SampleStatus oldStatus = sample.getStatus();
 
-            Map<String, String> updates = parseArgumentsWithQuotes(args);
+            Map<String, String> updates = parseArgumentsWithQuotes(args); //метод разбирает аргументы вида: name="River sample" создаёт Map: name -> River sample
+
 
             Set<String> seenFields = new HashSet<>();
-            for (String field : updates.keySet()) {
-                if (!ALLOWED_FIELDS.contains(field)) {
+            for (String field : updates.keySet()) { //возвращает множество (Set<K>), содержащее все уникальные ключи, присутствующие в карте
+                if (!ALLOWED_FIELDS.contains(field)) { // contains - проверяет есть ли элемент в списке/строке
                     System.out.println("Ошибка: нельзя менять поле '" + field + "'");
                     return;
                 }
@@ -83,7 +84,7 @@ public class SampleUpdateCommand extends Command {
 
             boolean changed = false;
 
-            for (Map.Entry<String, String> entry : updates.entrySet()) {
+            for (Map.Entry<String, String> entry : updates.entrySet()) { // Entry - одна пара «ключ-значение» внутри словаря Map. entrySet() — это метод у любой Map, который вытряхивает из неё все пары «ключ-значение» и складывает их в один набор Set
                 String field = entry.getKey();
                 String value = entry.getValue();
 
@@ -154,13 +155,13 @@ public class SampleUpdateCommand extends Command {
         for (int i = 1; i < args.length; i++) {
             String arg = args[i];
 
-            int equalsIndex = arg.indexOf('=');
+            int equalsIndex = arg.indexOf('='); //ищет позицию = и проверяет если оно есть
 
             if (equalsIndex == -1) {
                 throw new IllegalArgumentException("Ошибка: аргумент '" + arg + "' должен быть в формате поле=значение");
             }
 
-            String field = arg.substring(0, equalsIndex).toLowerCase();
+            String field = arg.substring(0, equalsIndex).toLowerCase(); //берет все до = и возвращает имя поля
             String valuePart = arg.substring(equalsIndex + 1);
 
             if (valuePart.startsWith("\"")) {
@@ -170,7 +171,7 @@ public class SampleUpdateCommand extends Command {
                     i++;
 
                     while (i < args.length) {
-                        fullValue.append(" ").append(args[i]);
+                        fullValue.append(" ").append(args[i]); //добавить к старой строке пробел и еще один аргумент
                         if (args[i].endsWith("\"")) {
                             break;
                         }
@@ -179,10 +180,10 @@ public class SampleUpdateCommand extends Command {
                 }
 
                 String quotedValue = fullValue.toString();
-                int firstQuote = quotedValue.indexOf('"');
+                int firstQuote = quotedValue.indexOf('"'); //ищет индексы первой и последней кавычки
                 int lastQuote = quotedValue.lastIndexOf('"');
                 if (firstQuote != -1 && lastQuote != -1 && firstQuote < lastQuote) {
-                    valuePart = quotedValue.substring(firstQuote + 1, lastQuote);
+                    valuePart = quotedValue.substring(firstQuote + 1, lastQuote); //substring берёт часть строки между индексами
                 } else {
                     valuePart = quotedValue;
                 }
