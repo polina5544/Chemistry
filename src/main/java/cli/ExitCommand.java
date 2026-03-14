@@ -5,6 +5,7 @@ package cli;
  */
 
 import java.io.*;
+import java.util.Objects;
 
 public class ExitCommand extends Command {
     private final Runnable onExit;
@@ -37,5 +38,17 @@ public class ExitCommand extends Command {
     public void startAdditionalInput(InputStream inputStream) {
         throw new UnsupportedOperationException
                 ("exit не поддерживает дополнительный ввод");
+    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Command command = (Command) o;
+        return Objects.equals(getHelp(), command.getHelp());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHelp());
     }
 }

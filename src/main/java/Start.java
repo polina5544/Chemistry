@@ -14,8 +14,8 @@ public class Start {
 
     private final Set<Command> commands = new HashSet<>();
     private final SampleService sampleService;
-    private final List<Measurement> allMeasurements = new ArrayList<>();
-    private final Map<Long, Protocol> protocolStorage = new HashMap<>();
+    private final Set<Measurement> allMeasurements = new HashSet<>();
+    private final Set<Protocol> protocolStorage = new HashSet<>();
 
     private boolean running = true;
 
@@ -33,18 +33,23 @@ public class Start {
                 running = false;
             }
         }));
+
         commands.add(new ProtocolApplyCommand(
                 sampleService,
-                protocolStorage,
+                (Set<Protocol>) protocolStorage,
                 allMeasurements
         ));
         commands.add(new ProtocolCreateCommand(protocolStorage));
+
         commands.add(new SampleAddCommand(sampleService));
         commands.add(new SampleArchiveCommand(sampleService));
         commands.add(new SampleListCommand(sampleService));
         commands.add(new SampleUpdateCommand(sampleService));
+        commands.add(new SampleShowCommand(sampleService, allMeasurements));
+
         commands.add(new MeasurementAddCommand(sampleService, allMeasurements));
         commands.add(new MeasurementStatsCommand(sampleService, allMeasurements));
+        commands.add(new MeasurementListCommand(sampleService, allMeasurements));
     }
 
     private Command findCommandByName(String name) {

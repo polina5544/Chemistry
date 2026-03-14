@@ -10,5 +10,7 @@ public abstract class Command {
     } // геттер для дополнительного ввода
     public abstract void startAdditionalInput(InputStream inputStream); // метод, обрабатывающий дополнительный ввод
     public abstract void validateArgs(String[] args); // метод, обрабатывающий введённые аргументы
-    public abstract String getHelp(); // метод для получения справки по команде
+    public abstract String getHelp();// метод для получения справки по команде
+    public abstract boolean equals(Object o);
+    public abstract int hashCode();
 }

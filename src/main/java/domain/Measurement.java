@@ -3,6 +3,7 @@ package domain;
 import domain.MeasurementParam;
 
 import java.time.Instant;
+import java.util.Objects;
 
 public class Measurement {
 
@@ -53,4 +54,17 @@ public class Measurement {
     public void setUnit(String unit) { this.unit = unit; }
     public void setMethod(String method) { this.method = method; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Measurement that = (Measurement) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

@@ -8,17 +8,18 @@ import java.io.*;
 import java.util.*;
 import domain.*;
 import service.SampleService;
+import utilits.IDgenerator;
 
 public class ProtocolApplyCommand extends Command {
 
     private final SampleService sampleService;
-    private final Map<Long, Protocol> protocolStorage;
-    private final List<Measurement> allMeasurements;
+    private final Set<Protocol> protocolStorage;
+    private final Set<Measurement> allMeasurements;
 
     public ProtocolApplyCommand(
             SampleService sampleService,
-            Map<Long, Protocol> protocolStorage,
-            List<Measurement> allMeasurements
+            Set<Protocol> protocolStorage,
+            Set<Measurement> allMeasurements
     ) {
         this.sampleService = sampleService;
         this.protocolStorage = protocolStorage;
@@ -57,10 +58,10 @@ public class ProtocolApplyCommand extends Command {
 
         validateArgs(args);
 
-        long protocolId = Long.parseLong(args[0]);
+        long protocolId = IDgenerator.nextId();
         long sampleId = Long.parseLong(args[1]);
 
-        Protocol protocol = protocolStorage.get(protocolId);
+        Protocol protocol = (Protocol) protocolStorage;
 
         if (protocol == null) {
             System.out.println("Ошибка: протокол не найден");
@@ -102,9 +103,7 @@ public class ProtocolApplyCommand extends Command {
                 if (!first) {
                     System.out.print(", ");
                 }
-
                 System.out.print(p);
-
                 first = false;
             }
 
@@ -116,5 +115,17 @@ public class ProtocolApplyCommand extends Command {
     public void startAdditionalInput(InputStream inputStream) {
         throw new UnsupportedOperationException(
                 "prot_apply не поддерживает дополнительный ввод");
+    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Command command = (Command) o;
+        return Objects.equals(getHelp(), command.getHelp());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHelp());
     }
 }

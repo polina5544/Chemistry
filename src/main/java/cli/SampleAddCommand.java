@@ -104,4 +104,16 @@ public class SampleAddCommand extends Command {
                 Instant.now()
         );
     }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Command command = (Command) o;
+        return Objects.equals(getHelp(), command.getHelp());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHelp());
+    }
 }

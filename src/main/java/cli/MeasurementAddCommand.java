@@ -10,15 +10,15 @@ import java.util.*;
 import domain.*;
 import service.SampleService;
 import validation.MeasurmentValidation;
+import utilits.IDgenerator;
 
 public class MeasurementAddCommand extends Command {
     private final SampleService sampleService;
-    private final List<Measurement> allMeasurements;
-    private long nextMeasurementId = 1;
-    private long currentSampleId;
+    private final Set<Measurement> allMeasurements;
     private long sampleId;
 
-    public MeasurementAddCommand(SampleService sampleService, List<Measurement> allMeasurements) {
+    public MeasurementAddCommand(SampleService sampleService,
+                                 Set<Measurement> allMeasurements) {
         this.sampleService = sampleService;
         this.allMeasurements = allMeasurements;
         this.requiredAdditionalInput = true;
@@ -27,21 +27,21 @@ public class MeasurementAddCommand extends Command {
     @Override
     public void validateArgs(String[] args) {
         if (args == null || args.length < 1) {
-            throw new IllegalArgumentException("Ошибка: укажите ID образца");
+            throw new IllegalArgumentException("Ошибка: укажите id образца");
         }
         if (args.length > 1) {
-            throw new IllegalArgumentException("Ошибка: meas_add принимает только один аргумент - ID образца");
+            throw new IllegalArgumentException("Ошибка: meas_add принимает только id образца");
         }
         try {
             this.sampleId = Long.parseLong(args[0]);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Ошибка: ID должен быть числом");
+            throw new IllegalArgumentException("Ошибка: id должен быть числом");
         }
     }
 
     @Override
     public String getHelp() {
-        return "meas_add <sample_id> - добавить измерение к образцу";
+        return "meas_add <id> - добавить измерение к образцу";
     }
 
     @Override
@@ -77,9 +77,10 @@ public class MeasurementAddCommand extends Command {
             double value = promptForValue(scanner);
             String unit = promptForNonEmpty(scanner, "Единицы");
             String method = promptForNonEmpty(scanner, "Метод");
+            long measurementId = IDgenerator.nextId();
 
             Measurement measurement = new Measurement(
-                    nextMeasurementId++,
+                    measurementId,
                     currentSampleId,
                     param,
                     value,
@@ -92,7 +93,7 @@ public class MeasurementAddCommand extends Command {
             );
 
             MeasurmentValidation.validate(measurement);
-            allMeasurements.add(measurement);
+            boolean added = allMeasurements.add(measurement);
 
             System.out.println("OK, измерение добавлено. measurement_id = " + measurement.getId());
 
@@ -142,5 +143,17 @@ public class MeasurementAddCommand extends Command {
             }
             return input;
         }
+    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Command command = (Command) o;
+        return Objects.equals(getHelp(), command.getHelp());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHelp());
     }
 }

@@ -9,14 +9,15 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import domain.*;
+import utilits.IDgenerator;
 import validation.ProtocolValidation;
 
 public class ProtocolCreateCommand extends Command {
 
-    private final Map<Long, Protocol> protocolStorage;
+    private final Set<Protocol> protocolStorage;
     private long nextProtocolId = 1;
 
-    public ProtocolCreateCommand(Map<Long, Protocol> protocolStorage) {
+    public ProtocolCreateCommand(Set<Protocol> protocolStorage) {
         this.protocolStorage = protocolStorage;
         this.requiredAdditionalInput = true;
     }
@@ -85,13 +86,24 @@ public class ProtocolCreateCommand extends Command {
             );
 
             ProtocolValidation.validate(protocol);
+            protocolStorage.add(protocol);
 
-            protocolStorage.put(protocol.getId(), protocol);
-
-            System.out.println("OK protocol_id=" + protocol.getId());
+            System.out.println("OK protocol_id = " + protocol.getId());
 
         } catch (NoSuchElementException e) {
             System.out.println("Ошибка: ввод прерван");
         }
+    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Command command = (Command) o;
+        return Objects.equals(getHelp(), command.getHelp());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHelp());
     }
 }

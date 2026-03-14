@@ -11,9 +11,10 @@ import service.SampleService;
 
 public class MeasurementStatsCommand extends Command {
     private final SampleService sampleService;
-    private final List<Measurement> allMeasurements;
+    private final Set<Measurement> allMeasurements;
 
-    public MeasurementStatsCommand(SampleService sampleService, List<Measurement> allMeasurements) {
+    public MeasurementStatsCommand(SampleService sampleService,
+                                  Set<Measurement> allMeasurements) {
         this.sampleService = sampleService;
         this.allMeasurements = allMeasurements;
         this.requiredAdditionalInput = false;
@@ -64,8 +65,8 @@ public class MeasurementStatsCommand extends Command {
             return;
         }
 
-        double min = values.getFirst();
-        double max = values.getFirst();
+        double min = values.get(0);
+        double max = values.get(0);
         double sum = 0;
 
         for (double v : values) {
@@ -84,5 +85,17 @@ public class MeasurementStatsCommand extends Command {
     @Override
     public void startAdditionalInput(InputStream inputStream) {
         throw new UnsupportedOperationException("meas_stats не поддерживает дополнительный ввод");
+    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Command command = (Command) o;
+        return Objects.equals(getHelp(), command.getHelp());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHelp());
     }
 }

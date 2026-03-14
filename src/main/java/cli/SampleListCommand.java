@@ -5,6 +5,8 @@ package cli;
  */
 
 import java.io.*;
+import java.util.Objects;
+
 import domain.Sample;
 import domain.SampleStatus;
 import service.SampleService;
@@ -79,5 +81,17 @@ public class SampleListCommand extends Command {
     @Override
     public void startAdditionalInput(InputStream inputStream) {
         throw new UnsupportedOperationException("sample_list не поддерживает дополнительный ввод");
+    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Command command = (Command) o;
+        return Objects.equals(getHelp(), command.getHelp());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHelp());
     }
 }

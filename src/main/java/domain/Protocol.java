@@ -1,6 +1,7 @@
 package domain;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Set;
 
 public class Protocol {
@@ -31,4 +32,17 @@ public class Protocol {
     public String getOwnerUsername() { return ownerUsername; }
     public String getName() { return name; }
     public Set<MeasurementParam> getRequiredParams() { return requiredParams; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Measurement that = (Measurement) o;
+        return Objects.equals(id, that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

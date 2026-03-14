@@ -12,16 +12,17 @@ import service.SampleService;
 
 public class MeasurementListCommand extends Command {
     private final SampleService sampleService;
-    private final List<Measurement> allMeasurements;
+    private final Set<Measurement> allMeasurements;
     private static final Set<String> VALID_PARAMS = new HashSet<>(Arrays.asList(
             "PH", "CONDUCTIVITY", "TURBIDITY", "NITRATE"
     ));
-
-    public MeasurementListCommand(SampleService sampleService, List<Measurement> allMeasurements) {
+    public MeasurementListCommand(SampleService sampleService,
+                                  Set<Measurement> allMeasurements) {
         this.sampleService = sampleService;
         this.allMeasurements = allMeasurements;
         this.requiredAdditionalInput = false;
     }
+
 
     @Override
     public void validateArgs(String[] args) {
@@ -148,5 +149,17 @@ public class MeasurementListCommand extends Command {
     @Override
     public void startAdditionalInput(InputStream inputStream) {
         throw new UnsupportedOperationException("meas_list не поддерживает дополнительный ввод");
+    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Command command = (Command) o;
+        return Objects.equals(getHelp(), command.getHelp());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHelp());
     }
 }
