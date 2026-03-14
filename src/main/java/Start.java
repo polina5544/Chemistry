@@ -36,7 +36,7 @@ public class Start {
 
         commands.add(new ProtocolApplyCommand(
                 sampleService,
-                (Set<Protocol>) protocolStorage,
+                protocolStorage,
                 allMeasurements
         ));
         commands.add(new ProtocolCreateCommand(protocolStorage));

@@ -8,7 +8,6 @@ import java.io.*;
 import java.util.*;
 import domain.*;
 import service.SampleService;
-import utilits.IDgenerator;
 
 public class ProtocolApplyCommand extends Command {
 
@@ -58,13 +57,18 @@ public class ProtocolApplyCommand extends Command {
 
         validateArgs(args);
 
-        long protocolId = IDgenerator.nextId();
+        long protocolId = Long.parseLong(args[0]);
         long sampleId = Long.parseLong(args[1]);
 
-        Protocol protocol = (Protocol) protocolStorage;
-
-        if (protocol == null) {
-            System.out.println("Ошибка: протокол не найден");
+        Protocol foundProtocol = null;
+        for (Protocol p : protocolStorage) {
+            if (p.getId() == protocolId) {
+                foundProtocol = p;
+                break;
+            }
+        }
+        if (foundProtocol == null) {
+            System.out.println("Ошибка: протокол с id " + protocolId + " не найден");
             return;
         }
 
@@ -77,8 +81,7 @@ public class ProtocolApplyCommand extends Command {
             return;
         }
 
-        Set<MeasurementParam> requiredParams = protocol.getRequiredParams(); // какие обязаны быть
-
+        Set<MeasurementParam> requiredParams = foundProtocol.getRequiredParams(); // какие обязаны быть
         Set<MeasurementParam> sampleParams = new HashSet<>(); //какие параметры реально измерены у образца
 
         for (Measurement m : allMeasurements) {
