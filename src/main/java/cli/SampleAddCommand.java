@@ -1,11 +1,11 @@
 package cli;
 
-/**
+/*
  * sample_add - создание нового образца
- * происходит крайне интерактивно
+ * происходит краааайне интерактивно (жеееееесть варя жесть, я чуть не умерла)
  */
 
-import java.io.*;
+
 import java.time.Instant;
 import java.util.*;
 import domain.Sample;
@@ -37,8 +37,7 @@ public class SampleAddCommand extends Command {
     public void execute(String[] args) {}
 
     @Override
-    public void startAdditionalInput(InputStream inputStream) {
-        Scanner scanner = new Scanner(inputStream);
+    public void startAdditionalInput(Scanner scanner) {
 
         String name = promptForField(scanner, "name", null, null, null, null);
         String type = promptForField(scanner, "type", name, null, null, null);
@@ -61,7 +60,7 @@ public class SampleAddCommand extends Command {
             String input = scanner.nextLine().trim();
 
             Sample tempSample = createTempSample(
-                    fieldName.equals("name") ? input : (validatedName != null ? validatedName : "temp_name"),
+                    fieldName.equals("name") ? input : (validatedName), // 4х этапная валидация. при первом вводе name в остальные подставляется заглушка тк validateSample проверяет 4 аргумента сразу. Далее после name оно уходит на второй этап type и следующая валидация проходит с удже существующим name
                     fieldName.equals("type") ? input : (validatedType != null ? validatedType : "temp_type"),
                     fieldName.equals("location") ? input : (validatedLocation != null ? validatedLocation : "temp_location"),
                     fieldName.equals("owner") ? input : (validatedOwner != null ? validatedOwner : "temp_owner")
@@ -74,7 +73,7 @@ public class SampleAddCommand extends Command {
                 String errorMessage = e.getMessage();
                 boolean isCurrentFieldError = false;
                 if (fieldName.equals("name") && errorMessage.contains("name")) {
-                    isCurrentFieldError = true;
+                    isCurrentFieldError = true; // проверить относится ли ошибка к текущему полю и если относится то попросить повторить ввод после этого значения
                 } else if (fieldName.equals("type") && errorMessage.contains("type")) {
                     isCurrentFieldError = true;
                 } else if (fieldName.equals("location") && errorMessage.contains("location")) {
@@ -86,7 +85,7 @@ public class SampleAddCommand extends Command {
                     System.out.println(errorMessage);
                     System.out.println("Повторите ввод:");
                 } else {
-                    throw new RuntimeException(errorMessage);
+                    throw new RuntimeException(errorMessage); //это тип ошибки, которую компилятор не заставляет обязательно обрабатывать в блоке try-catch. Она просто «роняет» текущий поток выполнения, если её никто не перехватит.
                 }
             }
         }
@@ -94,7 +93,7 @@ public class SampleAddCommand extends Command {
 
     private Sample createTempSample(String name, String type, String location, String owner) {
         return new Sample(
-                0L,
+                0L, //заглушка  используется потому что это временный объект для валидации, а реальные id генерируются в сервисе при создании настоящего Sample
                 name,
                 type,
                 location,

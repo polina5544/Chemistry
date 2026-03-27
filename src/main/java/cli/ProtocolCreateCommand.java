@@ -1,13 +1,12 @@
 package cli;
 
-/**
+/*
  * prot_create - создать новый протокол
  */
 
-import java.io.*;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
+
 import domain.*;
 import utilits.IDgenerator;
 import validation.ProtocolValidation;
@@ -15,7 +14,8 @@ import validation.ProtocolValidation;
 public class ProtocolCreateCommand extends Command {
 
     private final Set<Protocol> protocolStorage;
-    private long nextProtocolId = 1;
+    long nextProtocolId = IDgenerator.nextId();
+    ;
 
     public ProtocolCreateCommand(Set<Protocol> protocolStorage) {
         this.protocolStorage = protocolStorage;
@@ -40,9 +40,7 @@ public class ProtocolCreateCommand extends Command {
     }
 
     @Override
-    public void startAdditionalInput(InputStream inputStream) {
-
-        Scanner scanner = new Scanner(inputStream);
+    public void startAdditionalInput(Scanner scanner) {
 
         try {
 
@@ -77,7 +75,7 @@ public class ProtocolCreateCommand extends Command {
             }
 
             Protocol protocol = new Protocol(
-                    nextProtocolId++,
+                    nextProtocolId,
                     name,
                     params,
                     "system",
@@ -90,7 +88,7 @@ public class ProtocolCreateCommand extends Command {
 
             System.out.println("OK protocol_id = " + protocol.getId());
 
-        } catch (NoSuchElementException e) {
+        } catch (NoSuchElementException e) { // ошибка источника ввода а именно данные закончились например чтпение из файла
             System.out.println("Ошибка: ввод прерван");
         }
     }

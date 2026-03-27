@@ -1,10 +1,10 @@
 package cli;
 
-/**
+/*
  * meas_add <id> - добавить измерение к образцу
  */
 
-import java.io.*;
+
 import java.time.Instant;
 import java.util.*;
 import domain.*;
@@ -18,7 +18,7 @@ public class MeasurementAddCommand extends Command {
     private long sampleId;
 
     public MeasurementAddCommand(SampleService sampleService,
-                                 Set<Measurement> allMeasurements) {
+                                Set<Measurement> allMeasurements) { // тип - контракт метода
         this.sampleService = sampleService;
         this.allMeasurements = allMeasurements;
         this.requiredAdditionalInput = true;
@@ -33,11 +33,13 @@ public class MeasurementAddCommand extends Command {
             throw new IllegalArgumentException("Ошибка: meas_add принимает только id образца");
         }
         try {
-            this.sampleId = Long.parseLong(args[0]);
+            Long.parseLong(args[0]);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Ошибка: id должен быть числом");
         }
     }
+
+
 
     @Override
     public String getHelp() {
@@ -49,12 +51,10 @@ public class MeasurementAddCommand extends Command {
     }
 
     @Override
-    public void startAdditionalInput(InputStream inputStream) {
+    public void startAdditionalInput(Scanner scanner) {
 
         long currentSampleId = this.sampleId;
         this.sampleId = 0;
-
-        Scanner scanner = new Scanner(inputStream);
 
         try {
             Sample sample;
@@ -63,9 +63,6 @@ public class MeasurementAddCommand extends Command {
             } catch (NoSuchElementException e) {
                 System.out.println("Ошибка: образец с id = " + currentSampleId + " не найден");
                 return;
-            }
-            finally {
-                this.sampleId = 0;
             }
 
             if (sample.getStatus() == SampleStatus.ARCHIVED) {
@@ -93,9 +90,9 @@ public class MeasurementAddCommand extends Command {
             );
 
             MeasurmentValidation.validate(measurement);
-            boolean added = allMeasurements.add(measurement);
-
+            allMeasurements.add(measurement);
             System.out.println("OK, измерение добавлено. measurement_id = " + measurement.getId());
+
 
         } catch (NoSuchElementException e) {
             System.out.println("Ошибка: ввод прерван");
@@ -108,6 +105,12 @@ public class MeasurementAddCommand extends Command {
         while (true) {
             System.out.println("Параметр (PH/CONDUCTIVITY/TURBIDITY/NITRATE):");
             String input = scanner.nextLine().trim().toUpperCase();
+
+            if (input.isBlank()) {
+                System.out.println("Ошибка: параметр не может быть пустым");
+                continue;
+            }
+
             try {
                 return MeasurementParam.valueOf(input);
             } catch (IllegalArgumentException e) {
@@ -120,15 +123,29 @@ public class MeasurementAddCommand extends Command {
         while (true) {
             System.out.println("Значение:");
             String input = scanner.nextLine().trim();
+
+            if (input.isBlank()) {
+                System.out.println("Ошибка: значение не может быть пустым");
+                continue;
+            }
+
             try {
                 double value = Double.parseDouble(input);
+
+                if (Double.isNaN(value) || Double.isInfinite(value)) {
+                    System.out.println("Ошибка: значение должно быть обычным числом");
+                    continue;
+                }
+
                 if (value <= 0) {
                     System.out.println("Ошибка: значение должно быть больше 0");
                     continue;
                 }
+
                 return value;
+
             } catch (NumberFormatException e) {
-                System.out.println("Ошибка: значение должно быть числом");
+                System.out.println("Ошибка: введите число");
             }
         }
     }
@@ -136,14 +153,18 @@ public class MeasurementAddCommand extends Command {
     private String promptForNonEmpty(Scanner scanner, String fieldName) {
         while (true) {
             System.out.println(fieldName + ":");
-            String input = scanner.nextLine().trim();
-            if (input == null || input.isBlank()) {
-                System.out.println("Ошибка: " + fieldName.toLowerCase() + " не могут быть пустыми");
+            String input = scanner.nextLine();
+
+            if (input.isBlank()) {
+                System.out.println("Ошибка: " + fieldName.toLowerCase() + " не может быть пустым");
                 continue;
             }
-            return input;
+
+            return input.trim();
         }
     }
+
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

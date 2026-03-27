@@ -1,14 +1,15 @@
 package cli;
 
-/**
+/*
  * exit: выйти без сохранения
  */
 
 import java.io.*;
 import java.util.Objects;
+import java.util.Scanner;
 
 public class ExitCommand extends Command {
-    private final Runnable onExit;
+    private final Runnable onExit; //runnable - интегрфейс, контейнер для кода, который можно выполнить позже
 
     public ExitCommand(Runnable onExit) {
         this.onExit = onExit;
@@ -35,7 +36,7 @@ public class ExitCommand extends Command {
     }
 
     @Override
-    public void startAdditionalInput(InputStream inputStream) {
+    public void startAdditionalInput(Scanner scanner) {
         throw new UnsupportedOperationException
                 ("exit не поддерживает дополнительный ввод");
     }

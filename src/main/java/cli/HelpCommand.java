@@ -1,11 +1,12 @@
 package cli;
 
-/**
+/*
  * help: вывести справку по доступным командам
  */
 
 import java.io.*;
 import java.util.Objects;
+import java.util.Scanner;
 import java.util.Set;
 
 public class HelpCommand extends Command {
@@ -38,7 +39,7 @@ public class HelpCommand extends Command {
     }
 
     @Override
-    public void startAdditionalInput(InputStream inputStream) {
+    public void startAdditionalInput(Scanner scanner) {
         throw new UnsupportedOperationException
                 ("help не поддерживает дополнительный ввод");
     }

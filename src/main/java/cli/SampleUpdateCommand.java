@@ -1,6 +1,6 @@
 package cli;
 
-/**
+/*
  * sample_update <id> field=value ... - изменить поля образца (name, type, location, status)
  */
 
@@ -44,34 +44,22 @@ public class SampleUpdateCommand extends Command {
 
     @Override
     public void execute(String[] args) {
-        if (args == null || args.length < 2) {
-            System.out.println("Используйте такой формат ввода: sample_update <id> поле=значение ... " +
-                    "Введите изменяемое значение в кавычках");
-            return;
-        }
-
-        long id;
-        try {
-            id = Long.parseLong(args[0]);
-        } catch (NumberFormatException e) {
-            System.out.println("Ошибка: ID должен быть числом");
-            return;
-        }
+        
+        long id = Long.parseLong(args[0]);
 
         try {
             Sample sample = sampleService.getById(id);
 
+            Map<String, String> updates = parseArgumentsWithQuotes(args); //метод разбирает аргументы вида: name="River sample" создаёт Map - name : River sample
+
+            Set<String> seenFields = new HashSet<>();
             String oldName = sample.getName();
             String oldType = sample.getType();
             String oldLocation = sample.getLocation();
             SampleStatus oldStatus = sample.getStatus();
 
-            Map<String, String> updates = parseArgumentsWithQuotes(args); //метод разбирает аргументы вида: name="River sample" создаёт Map: name -> River sample
-
-
-            Set<String> seenFields = new HashSet<>();
-            for (String field : updates.keySet()) { //возвращает множество (Set<K>), содержащее все уникальные ключи, присутствующие в карте
-                if (!ALLOWED_FIELDS.contains(field)) { // contains - проверяет есть ли элемент в списке/строке
+            for (String field : updates.keySet()) { // проходится по каждой веденной пользователем паре и возвращает множество (Set<K>), содержащее все уникальные ключи, присутствующие в карте
+                if (!ALLOWED_FIELDS.contains(field)) { // contains - проверяет есть ли элемент(ключ) в списке/строке
                     System.out.println("Ошибка: нельзя менять поле '" + field + "'");
                     return;
                 }
@@ -84,8 +72,9 @@ public class SampleUpdateCommand extends Command {
 
             boolean changed = false;
 
-            for (Map.Entry<String, String> entry : updates.entrySet()) { // Entry - одна пара «ключ-значение» внутри словаря Map. entrySet() — это метод у любой Map, который вытряхивает из неё все пары «ключ-значение» и складывает их в один набор Set
-                String field = entry.getKey();
+            // уже обход обновленных
+            for (Map.Entry<String, String> entry : updates.entrySet()) { // Проходится по кажой паре ключ значение - Entry - одна пара «ключ-значение» внутри словаря Map. entrySet() — это метод у любой Map, который вытряхивает из неё все пары «ключ-значение» и складывает их в один набор Set
+                String field = entry.getKey(); // здесь Map - временная структура. аргументы разбираются в Map, где ключ — это имя поля,а значение — введённое пользователем значение. Далее через entrySet происходит перебор всех пар ключ-значение.
                 String value = entry.getValue();
 
                 if (value == null || value.trim().isEmpty()) {
@@ -141,7 +130,6 @@ public class SampleUpdateCommand extends Command {
                 return;
             }
 
-            sampleService.update(id, sample.getName(), sample.getType(), sample.getLocation());
             System.out.println("OK, образец с id = " + id + " изменён.");
 
         } catch (NoSuchElementException e) {
@@ -157,14 +145,14 @@ public class SampleUpdateCommand extends Command {
 
             int equalsIndex = arg.indexOf('='); //ищет позицию = и проверяет если оно есть
 
-            if (equalsIndex == -1) {
+            if (equalsIndex == -1) { // возвращает -1 если элекмент не найден
                 throw new IllegalArgumentException("Ошибка: аргумент '" + arg + "' должен быть в формате поле=значение");
             }
 
-            String field = arg.substring(0, equalsIndex).toLowerCase(); //берет все до = и возвращает имя поля
+            String field = arg.substring(0, equalsIndex).toLowerCase(); //берет все до = и возвращает имя поля, извлекает часть строки
             String valuePart = arg.substring(equalsIndex + 1);
 
-            if (valuePart.startsWith("\"")) {
+            if (valuePart.startsWith("\"")) { //проверяет, начинается ли строка с указанного префикса, возвращая true или false. Он чувствителен к регистру
                 StringBuilder fullValue = new StringBuilder(valuePart);
 
                 if (!valuePart.endsWith("\"")) {
@@ -196,7 +184,7 @@ public class SampleUpdateCommand extends Command {
     }
 
     @Override
-    public void startAdditionalInput(InputStream inputStream) {
+    public void startAdditionalInput(Scanner scanner) {
         throw new UnsupportedOperationException("sample_update не поддерживает дополнительный ввод");
     }
     @Override

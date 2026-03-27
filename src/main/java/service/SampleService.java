@@ -1,6 +1,7 @@
 package service;
 
 import domain.*;
+import utilits.IDgenerator;
 import validation.SampleValidation;
 
 import java.time.Instant;
@@ -9,12 +10,12 @@ import java.util.*;
 public class SampleService {
 
     private final Map<Long, Sample> storage = new HashMap<>();
-    private long nextId = 1;
+    long Id = IDgenerator.nextId();
 
     public Sample add(String name, String type, String location, String owner) {
 
         Sample sample = new Sample(
-                nextId,
+                Id,
                 name,
                 type,
                 location,
@@ -26,8 +27,7 @@ public class SampleService {
 
         SampleValidation.validate(sample);
 
-        storage.put(nextId, sample);
-        nextId++;
+        storage.put(Id, sample);
 
         return sample;
     }
@@ -43,16 +43,8 @@ public class SampleService {
         return new ArrayList<>(storage.values());
     }
 
-    public void update(long id, String name, String type, String location) {
-
-        Sample s = getById(id);
-
-        s.setName(name);
-        s.setType(type);
-        s.setLocation(location);
-        s.setUpdatedAt(Instant.now());
-
-        SampleValidation.validate(s);
+    public void update(Sample sample) {
+        SampleValidation.validate(sample);
     }
 
     public void remove(long id) {

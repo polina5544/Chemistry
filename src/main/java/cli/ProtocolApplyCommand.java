@@ -1,6 +1,6 @@
 package cli;
 
-/**
+/*
  * prot_apply <protocol_id> <sample_id> - проверить, выполнен ли протокол для образца
  */
 
@@ -29,14 +29,9 @@ public class ProtocolApplyCommand extends Command {
     @Override
     public void validateArgs(String[] args) {
 
-        if (args == null || args.length < 2) {
+        if (args == null || args.length != 2) {
             throw new IllegalArgumentException(
                     "Использование: prot_apply <protocol_id> <sample_id>");
-        }
-
-        if (args.length > 2) {
-            throw new IllegalArgumentException(
-                    "Ошибка: prot_apply принимает только два аргумента");
         }
 
         try {
@@ -54,8 +49,6 @@ public class ProtocolApplyCommand extends Command {
 
     @Override
     public void execute(String[] args) {
-
-        validateArgs(args);
 
         long protocolId = Long.parseLong(args[0]);
         long sampleId = Long.parseLong(args[1]);
@@ -115,7 +108,7 @@ public class ProtocolApplyCommand extends Command {
     }
 
     @Override
-    public void startAdditionalInput(InputStream inputStream) {
+    public void startAdditionalInput(Scanner scanner) {
         throw new UnsupportedOperationException(
                 "prot_apply не поддерживает дополнительный ввод");
     }

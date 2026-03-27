@@ -1,6 +1,6 @@
 package cli;
 
-/**
+/*
  * meas_stats <id> <param> - привести статистику по выбранному параметру: count/min/max/avg
  */
 
@@ -38,12 +38,6 @@ public class MeasurementStatsCommand extends Command {
 
     @Override
     public void execute(String[] args) {
-        try {
-            validateArgs(args);
-        } catch (IllegalArgumentException e) {
-            System.out.println(e.getMessage());
-            return;
-        }
 
         long sampleId = Long.parseLong(args[0]);
         MeasurementParam param = MeasurementParam.valueOf(args[1].toUpperCase());
@@ -77,13 +71,13 @@ public class MeasurementStatsCommand extends Command {
         double avg = sum / values.size();
 
         System.out.println("count: " + values.size());
-        System.out.printf("min: %.2f%n", min);
+        System.out.printf("min: %.2f%n", min); // %.2f - спецификатор для числа с плавающей точкой
         System.out.printf("max: %.2f%n", max);
         System.out.printf("avg: %.2f%n", avg);
     }
 
     @Override
-    public void startAdditionalInput(InputStream inputStream) {
+    public void startAdditionalInput(Scanner scanner) {
         throw new UnsupportedOperationException("meas_stats не поддерживает дополнительный ввод");
     }
     @Override

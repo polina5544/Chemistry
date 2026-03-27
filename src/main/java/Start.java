@@ -1,52 +1,57 @@
-// Пока что главный класс для проверки работы команд. Позже переедет в Main.
-
 import java.util.*;
 import cli.*;
 import domain.*;
 import service.*;
-import utilits.*;
-import validation.*;
 
 public class Start {
+
     public static void main(String[] args) {
-        new Start().run();
+        // создали зависимости по принципу dependency injection - патерн
+
+        SampleService sampleService = new SampleService();
+        Set<Measurement> measurements = new HashSet<>();
+        Set<Protocol> protocols = new HashSet<>();
+
+        // в start передали зависимости
+        Start app = new Start(sampleService, measurements, protocols);
+        app.run();
     }
 
     private final Set<Command> commands = new HashSet<>();
     private final SampleService sampleService;
-    private final Set<Measurement> allMeasurements = new HashSet<>();
-    private final Set<Protocol> protocolStorage = new HashSet<>();
-
+    private final Set<Measurement> allMeasurements;
+    private final Set<Protocol> protocolStorage;
     private boolean running = true;
+    private final Scanner scanner = new Scanner(System.in);
 
-    public Start() {
-        this.sampleService = new SampleService();
+    // передали зпвисимости через конструктор
+    public Start(SampleService sampleService,
+                 Set<Measurement> allMeasurements,
+                 Set<Protocol> protocolStorage) {
+        this.sampleService = sampleService;
+        this.allMeasurements = allMeasurements;
+        this.protocolStorage = protocolStorage;
         registerCommands();
     }
 
     private void registerCommands() {
 
         commands.add(new HelpCommand(commands));
-        commands.add(new ExitCommand(new Runnable() {
-            @Override
-            public void run() {
-                running = false;
-            }
-        }));
+
+        commands.add(new ExitCommand(() -> running = false)); //лямбда-выражение - это реализация метода run
 
         commands.add(new ProtocolApplyCommand(
                 sampleService,
                 protocolStorage,
                 allMeasurements
         ));
-        commands.add(new ProtocolCreateCommand(protocolStorage));
 
+        commands.add(new ProtocolCreateCommand(protocolStorage));
         commands.add(new SampleAddCommand(sampleService));
         commands.add(new SampleArchiveCommand(sampleService));
         commands.add(new SampleListCommand(sampleService));
         commands.add(new SampleUpdateCommand(sampleService));
         commands.add(new SampleShowCommand(sampleService, allMeasurements));
-
         commands.add(new MeasurementAddCommand(sampleService, allMeasurements));
         commands.add(new MeasurementStatsCommand(sampleService, allMeasurements));
         commands.add(new MeasurementListCommand(sampleService, allMeasurements));
@@ -54,8 +59,7 @@ public class Start {
 
     private Command findCommandByName(String name) {
         for (Command cmd : commands) {
-            String helpLine = cmd.getHelp();
-            String cmdName = helpLine.split("\\s+")[0];
+            String cmdName = cmd.getHelp().split("\\s+")[0];
             if (cmdName.equalsIgnoreCase(name)) {
                 return cmd;
             }
@@ -64,7 +68,7 @@ public class Start {
     }
 
     public void run() {
-        Scanner scanner = new Scanner(System.in);
+
         System.out.println("Система управления лабораторными образцами и измерениями по протоколу");
         System.out.println("Чтобы просмотреть доступные команды, введите help");
 
@@ -72,30 +76,33 @@ public class Start {
             System.out.print("> ");
             String input = scanner.nextLine().trim();
 
-            if (input.isEmpty()) {
-                continue;
-            }
+            if (input.isEmpty()) continue;
 
             String[] parts = input.split("\\s+");
             String commandName = parts[0].toLowerCase();
-            String[] args = new String[parts.length - 1];
-            System.arraycopy(parts, 1, args, 0, parts.length - 1);
+            String[] args = Arrays.copyOfRange(parts, 1, parts.length);
 
             Command command = findCommandByName(commandName);
-            if (command != null) {
-                try {
-                    command.validateArgs(args);
-                    if (command.isRequiredAdditionalInput()) {
-                        command.startAdditionalInput(System.in);
-                    } else {
-                        command.execute(args);
-                    }
-                } catch (Exception e) {
-                    System.out.println("Ошибка: " + e.getMessage());
-                }
-            } else {
+
+            if (command == null) {
                 System.out.println("Неизвестная команда: " + commandName);
-                System.out.println("Чтобы просмотреть доступные команды, введите help");
+                System.out.println("Введите help для списка команд");
+                continue;
+            }
+
+            try {
+                command.validateArgs(args);
+
+                if (command.isRequiredAdditionalInput()) {
+                    command.startAdditionalInput(scanner);
+                } else {
+                    command.execute(args);
+                }
+
+            } catch (IllegalArgumentException e) { // проверка на пользовательский ввод
+                System.out.println(e.getMessage());
+            } catch (Exception e) { //системная ошибка на уровне всей программы
+                System.out.println("Непредвиденная ошибка: " + e.getMessage());
             }
         }
         scanner.close();

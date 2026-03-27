@@ -1,6 +1,6 @@
 package cli;
 
-/**
+/*
  * sample_archive <id> - перевести образец в ARCHIVED
  * если образец заархивирован, то добавлять новые измерения уже нельзя
  */
@@ -39,29 +39,29 @@ public class SampleArchiveCommand extends Command {
 
     @Override
     public void execute(String[] args) {
-        validateArgs(args);
         long id = Long.parseLong(args[0]);
 
         try {
             Sample sample = sampleService.getById(id);
+
             if (sample.getStatus() == SampleStatus.ARCHIVED) {
                 System.out.println("Статус образца уже ARCHIVED");
                 return;
             }
+
             sample.setStatus(SampleStatus.ARCHIVED);
             sample.setUpdatedAt(Instant.now());
-            sampleService.update(id, sample.getName(), sample.getType(), sample.getLocation());
+
             System.out.println("OK sample " + id + " заархивирован");
+
         } catch (NoSuchElementException e) {
             System.out.println("Ошибка: образец с id " + id + " не найден");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Ошибка валидации: " + e.getMessage());
-            System.out.println("Архивация не выполнена");
+
         }
     }
 
     @Override
-    public void startAdditionalInput(InputStream inputStream) {
+    public void startAdditionalInput(Scanner scanner) {
         throw new UnsupportedOperationException("sample_archive не поддерживает дополнительный ввод");
     }
     @Override

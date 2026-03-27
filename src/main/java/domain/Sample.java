@@ -4,13 +4,13 @@ import java.time.Instant;
 
 public class Sample {
 
-    private long id;
+    private final long id;
     private String name;
     private String type;
     private String location;
     private SampleStatus status;
     private String ownerUsername;
-    private Instant createdAt;
+    private final Instant createdAt;
     private Instant updatedAt;
 
     public Sample(long id,
@@ -46,4 +46,5 @@ public class Sample {
     public void setLocation(String location) { this.location = location; }
     public void setStatus(SampleStatus status) { this.status = status; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+    public void setOwnerUsername() { this.ownerUsername =  ownerUsername; }
 }

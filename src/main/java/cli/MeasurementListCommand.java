@@ -1,6 +1,6 @@
 package cli;
 
-/**
+/*
  * meas_list <sample_id> [--param] | [--last N] - показать измерения образца
  */
 
@@ -13,7 +13,7 @@ import service.SampleService;
 public class MeasurementListCommand extends Command {
     private final SampleService sampleService;
     private final Set<Measurement> allMeasurements;
-    private static final Set<String> VALID_PARAMS = new HashSet<>(Arrays.asList(
+    private static final Set<String> VALID_PARAMS = new HashSet<>(Arrays.asList( //быстрый способ превратить перечисление элементов в список. в HashSet нам нужны только ключи (уникальные элементы). Чтобы не тратить память на создание разных объектов для значений, Java использует одну-единственную статическую константу-заглушку.
             "PH", "CONDUCTIVITY", "TURBIDITY", "NITRATE"
     ));
     public MeasurementListCommand(SampleService sampleService,
@@ -76,13 +76,6 @@ public class MeasurementListCommand extends Command {
 
     @Override
     public void execute(String[] args) {
-        try {
-            validateArgs(args);
-        } catch (IllegalArgumentException e) {
-            System.out.println(e.getMessage());
-            return;
-        }
-
         long sampleId = Long.parseLong(args[0]);
 
         try {
@@ -147,14 +140,14 @@ public class MeasurementListCommand extends Command {
     }
 
     @Override
-    public void startAdditionalInput(InputStream inputStream) {
+    public void startAdditionalInput(Scanner scanner) {
         throw new UnsupportedOperationException("meas_list не поддерживает дополнительный ввод");
     }
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Command command = (Command) o;
+        Command command = (Command) o; //это приведение типа (casting) это обьект типа command
         return Objects.equals(getHelp(), command.getHelp());
     }
 

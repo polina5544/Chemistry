@@ -1,6 +1,6 @@
 package cli;
 
-/**
+/*
  * sample_show <id> - показать карточку образца и статистику по измерениям
  */
 
@@ -41,25 +41,19 @@ public class SampleShowCommand extends Command {
 
     @Override
     public void execute(String[] args) {
-        try {
-            validateArgs(args);
-        } catch (IllegalArgumentException e) {
-            System.out.println(e.getMessage());
-            return;
-        }
 
         long id = Long.parseLong(args[0]);
 
         try {
             Sample sample = sampleService.getById(id);
 
-            List<Measurement> sampleMeasurements = new ArrayList<>();
-            Set<MeasurementParam> uniqueParams = new HashSet<>();
+            List<Measurement> sampleMeasurements = new ArrayList<>(); // все параметры с дублированием
+            Set<MeasurementParam> uniqueParams = new HashSet<>(); // параметры могут дублтроваться. делам эту колекция во избежание одинаковых параметров кстати тип енум!!
 
-            for (Measurement m : allMeasurements) {
+            for (Measurement m : allMeasurements) { // проходит по всем объектам из коллекции и ищет нужный ID
                 if (m.getSampleId() == id) {
-                    sampleMeasurements.add(m);
-                    uniqueParams.add(m.getParam());
+                    sampleMeasurements.add(m); // сюда все измерения
+                    uniqueParams.add(m.getParam()); // сюда только параметр измерения присем если он уже есть то больше не добавится тк set
                 }
             }
 
@@ -73,7 +67,7 @@ public class SampleShowCommand extends Command {
 
             if (!uniqueParams.isEmpty()) {
                 List<String> paramNames = new ArrayList<>();
-                for (MeasurementParam p : uniqueParams) { // получаем имя из enum, p.name - метод enum
+                for (MeasurementParam p : uniqueParams) { // получаем имя из enum, p.name - метод enum который возвращает название как строку
                     paramNames.add(p.name());
                 }
                 Collections.sort(paramNames);
@@ -88,19 +82,20 @@ public class SampleShowCommand extends Command {
     }
 
     @Override
-    public void startAdditionalInput(InputStream inputStream) {
+    public void startAdditionalInput(Scanner scanner) {
         throw new UnsupportedOperationException("sample_show не поддерживает дополнительный ввод");
     }
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Command command = (Command) o;
-        return Objects.equals(getHelp(), command.getHelp());
+        if (this == o) return true; // Java сравнивает ссылки (адреса в памяти). Если this (текущий объект) и o (пришедший на вход) указывают на одну и ту же ячейку памяти, то это буквально один и тот же экземпляр.
+        if (o == null || getClass() != o.getClass()) return false; // проверка на пренадлежность классу
+        Command command = (Command) o; // casting - приведение типа то есть надо обращаться с ним как с командой, а не как с абстрактным объектом Object, так как у Object нет метода getHelp()
+        return Objects.equals(getHelp(), command.getHelp()); //Объекты считаются равными, если это не null, они одного класса и у них одинаковое поле help. Кстати значение обновляется а клюс сохраняется
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(getHelp());
-    }
+    } // переопределение с equals hash(getHelp() преобразует аргумент в число, берет строку из help и вычисляет на её основе число. Если help у двух объектов одинаковый, то и число (хэш) будет одинаковым.
+
 }
