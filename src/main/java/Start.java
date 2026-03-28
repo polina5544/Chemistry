@@ -24,7 +24,7 @@ public class Start {
     private boolean running = true;
     private final Scanner scanner = new Scanner(System.in);
 
-    // передали зaвисимости через конструктор
+    // передали зпвисимости через конструктор
     public Start(SampleService sampleService,
                  Set<Measurement> allMeasurements,
                  Set<Protocol> protocolStorage) {
@@ -37,6 +37,7 @@ public class Start {
     private void registerCommands() {
 
         commands.add(new HelpCommand(commands));
+
         commands.add(new ExitCommand(() -> running = false)); //лямбда-выражение - это реализация метода run
 
         commands.add(new ProtocolApplyCommand(
@@ -91,8 +92,13 @@ public class Start {
 
             try {
                 command.validateArgs(args);
+
+                if (command.isRequiredAdditionalInput()) {
                     command.startAdditionalInput(scanner);
+                } else {
                     command.execute(args);
+                }
+
             } catch (IllegalArgumentException e) { // проверка на пользовательский ввод
                 System.out.println(e.getMessage());
             } catch (Exception e) { //системная ошибка на уровне всей программы

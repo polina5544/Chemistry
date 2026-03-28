@@ -57,13 +57,11 @@ public class ProtocolApplyCommand implements Command{
         long protocolId = Long.parseLong(args[0]);
         long sampleId = Long.parseLong(args[1]);
 
-        Protocol foundProtocol = null;
-        for (Protocol p : protocolStorage) {
-            if (p.getId() == protocolId) {
-                foundProtocol = p;
-                break;
-            }
-        }
+        Protocol foundProtocol = protocolStorage.stream()
+                .filter(p -> p.getId() == protocolId)
+                .findFirst()
+                .orElse(null);
+
         if (foundProtocol == null) {
             System.out.println("Ошибка: протокол с id " + protocolId + " не найден");
             return;
@@ -81,11 +79,10 @@ public class ProtocolApplyCommand implements Command{
         Set<MeasurementParam> requiredParams = foundProtocol.getRequiredParams(); // какие обязаны быть
         Set<MeasurementParam> sampleParams = new HashSet<>(); //какие параметры реально измерены у образца
 
-        for (Measurement m : allMeasurements) {
-            if (m.getSampleId() == sampleId) {
+        allMeasurements.forEach(m -> {
+            if (m.getSampleId() == sampleId)
                 sampleParams.add(m.getParam());
-            }
-        }
+        });
 
         Set<MeasurementParam> missing = new HashSet<>(requiredParams); //копия обязательных параметров
         missing.removeAll(sampleParams); // удаляяются из обязательных те параметры которве уже есть у образца

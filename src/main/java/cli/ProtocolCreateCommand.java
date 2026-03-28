@@ -15,7 +15,7 @@ public class ProtocolCreateCommand implements Command {
 
     private final Set<Protocol> protocolStorage;
     long nextProtocolId = IDgenerator.nextId();
-    ;
+
 
     public ProtocolCreateCommand(Set<Protocol> protocolStorage) {
         this.protocolStorage = protocolStorage;

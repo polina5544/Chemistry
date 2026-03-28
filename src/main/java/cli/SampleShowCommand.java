@@ -6,6 +6,8 @@ package cli;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
+
 import domain.*;
 import service.SampleService;
 
@@ -46,15 +48,14 @@ public class SampleShowCommand implements Command {
         try {
             Sample sample = sampleService.getById(id);
 
-            List<Measurement> sampleMeasurements = new ArrayList<>(); // все параметры с дублированием
-            Set<MeasurementParam> uniqueParams = new HashSet<>(); // параметры могут дублтроваться. делам эту колекция во избежание одинаковых параметров кстати тип енум!!
+            List<Measurement> sampleMeasurements = allMeasurements.stream()// проходит по всем объектам из коллекции и ищет нужный ID
+                    .filter(m -> m.getSampleId() == id)// сюда все измерения
+                    .toList();
 
-            for (Measurement m : allMeasurements) { // проходит по всем объектам из коллекции и ищет нужный ID
-                if (m.getSampleId() == id) {
-                    sampleMeasurements.add(m); // сюда все измерения
-                    uniqueParams.add(m.getParam()); // сюда только параметр измерения присем если он уже есть то больше не добавится тк set
-                }
-            }
+            Set<MeasurementParam> uniqueParams = allMeasurements.stream()
+                    .filter(m -> m.getSampleId() == id)
+                    .map(Measurement::getParam)
+                    .collect(Collectors.toSet());
 
             System.out.println("Sample #" + sample.getId());
             System.out.println("name: " + sample.getName());
@@ -65,12 +66,12 @@ public class SampleShowCommand implements Command {
             System.out.println("measurements: " + sampleMeasurements.size());
 
             if (!uniqueParams.isEmpty()) {
-                List<String> paramNames = new ArrayList<>();
-                for (MeasurementParam p : uniqueParams) { // получаем имя из enum, p.name - метод enum который возвращает название как строку
-                    paramNames.add(p.name());
-                }
-                Collections.sort(paramNames);
-                System.out.println("params: " + String.join(", ", paramNames)); // join - соединяет элементы списка в одну строку
+                String result = uniqueParams.stream()
+                        .map(Enum::name)
+                        .sorted()
+                        .collect(Collectors.joining(", "));
+
+                System.out.println("params: " + result);
             } else {
                 System.out.println("params: нет измерений");
             }

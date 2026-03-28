@@ -52,26 +52,19 @@ public class MeasurementStatsCommand implements Command {
             System.out.println("Ошибка: образец с id = " + sampleId + " не найден");
             return;
         }
-        List<Double> values = new ArrayList<>();
-        for (Measurement m : allMeasurements) {
-            if (m.getSampleId() == sampleId && m.getParam() == param) {
-                values.add(m.getValue());
-            }
-        }
+        List<Double> values = allMeasurements.stream()//превращение в поток те обработка элементов
+                .filter(m -> m.getSampleId() == sampleId && m.getParam() == param) //для каждого m проверяем принадлежность условий
+                .map(Measurement::getValue) // получение значения с помощью map превращаем одно в другое а именно в double
+                .toList(); //собрала элементы в лист
+
         if (values.isEmpty()) {
             System.out.println("Ошибка: нет измерений " + param + " для sample = " + sampleId);
             return;
         }
 
-        double min = values.get(0);
-        double max = values.get(0);
-        double sum = 0;
-
-        for (double v : values) {
-            if (v < min) min = v;
-            if (v > max) max = v;
-            sum += v;
-        }
+        double min = values.stream().min(Double::compare).get();
+        double max = values.stream().max(Double::compare).get();
+        double sum = values.stream().mapToDouble(Double::doubleValue).sum();
         double avg = sum / values.size();
 
         System.out.println("count: " + values.size());
