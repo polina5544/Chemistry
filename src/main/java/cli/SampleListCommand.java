@@ -11,12 +11,11 @@ import domain.Sample;
 import domain.SampleStatus;
 import service.SampleService;
 
-public class SampleListCommand extends Command {
+public class SampleListCommand implements Command {
     private final SampleService sampleService;
 
     public SampleListCommand(SampleService sampleService) {
         this.sampleService = sampleService;
-        this.requiredAdditionalInput = false;
     }
 
     @Override
@@ -37,6 +36,11 @@ public class SampleListCommand extends Command {
     @Override
     public String getHelp() {
         return "sample_list [--status ACTIVE|ARCHIVED] [--mine] - вывести список образцов";
+    }
+
+    @Override
+    public void startAdditionalInput(Scanner scanner) {
+
     }
 
     @Override
@@ -85,22 +89,5 @@ public class SampleListCommand extends Command {
         if (!found) {
             System.out.println("В системе нет образцов, соответствующих критериям");
         }
-    }
-
-    @Override
-    public void startAdditionalInput(Scanner scanner) {
-        throw new UnsupportedOperationException("sample_list не поддерживает дополнительный ввод");
-    }
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Command command = (Command) o;
-        return Objects.equals(getHelp(), command.getHelp());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getHelp());
     }
 }

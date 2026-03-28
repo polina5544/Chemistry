@@ -12,12 +12,11 @@ import domain.Sample;
 import domain.SampleStatus;
 import service.SampleService;
 
-public class SampleArchiveCommand extends Command {
+public class SampleArchiveCommand implements Command {
     private final SampleService sampleService;
 
     public SampleArchiveCommand(SampleService sampleService) {
         this.sampleService = sampleService;
-        this.requiredAdditionalInput = false;
     }
 
     @Override
@@ -35,6 +34,11 @@ public class SampleArchiveCommand extends Command {
     @Override
     public String getHelp() {
         return "sample_archive <id> - перевести образец в ARCHIVED";
+    }
+
+    @Override
+    public void startAdditionalInput(Scanner scanner) {
+
     }
 
     @Override
@@ -58,22 +62,5 @@ public class SampleArchiveCommand extends Command {
             System.out.println("Ошибка: образец с id " + id + " не найден");
 
         }
-    }
-
-    @Override
-    public void startAdditionalInput(Scanner scanner) {
-        throw new UnsupportedOperationException("sample_archive не поддерживает дополнительный ввод");
-    }
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Command command = (Command) o;
-        return Objects.equals(getHelp(), command.getHelp());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getHelp());
     }
 }

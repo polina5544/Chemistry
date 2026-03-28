@@ -9,7 +9,7 @@ import java.util.*;
 import domain.*;
 import service.SampleService;
 
-public class MeasurementStatsCommand extends Command {
+public class MeasurementStatsCommand implements Command {
     private final SampleService sampleService;
     private final Set<Measurement> allMeasurements;
 
@@ -17,7 +17,6 @@ public class MeasurementStatsCommand extends Command {
                                   Set<Measurement> allMeasurements) {
         this.sampleService = sampleService;
         this.allMeasurements = allMeasurements;
-        this.requiredAdditionalInput = false;
     }
 
     @Override
@@ -34,6 +33,11 @@ public class MeasurementStatsCommand extends Command {
     @Override
     public String getHelp() {
         return "meas_stats <id> <param> - привести статистику по выбранному параметру: count/min/max/avg";
+    }
+
+    @Override
+    public void startAdditionalInput(Scanner scanner) {
+
     }
 
     @Override
@@ -74,22 +78,5 @@ public class MeasurementStatsCommand extends Command {
         System.out.printf("min: %.2f%n", min); // %.2f - спецификатор для числа с плавающей точкой
         System.out.printf("max: %.2f%n", max);
         System.out.printf("avg: %.2f%n", avg);
-    }
-
-    @Override
-    public void startAdditionalInput(Scanner scanner) {
-        throw new UnsupportedOperationException("meas_stats не поддерживает дополнительный ввод");
-    }
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Command command = (Command) o;
-        return Objects.equals(getHelp(), command.getHelp());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getHelp());
     }
 }

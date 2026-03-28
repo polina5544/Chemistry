@@ -9,7 +9,7 @@ import java.util.*;
 import domain.*;
 import service.SampleService;
 
-public class ProtocolApplyCommand extends Command {
+public class ProtocolApplyCommand implements Command{
 
     private final SampleService sampleService;
     private final Set<Protocol> protocolStorage;
@@ -23,7 +23,6 @@ public class ProtocolApplyCommand extends Command {
         this.sampleService = sampleService;
         this.protocolStorage = protocolStorage;
         this.allMeasurements = allMeasurements;
-        this.requiredAdditionalInput = false;
     }
 
     @Override
@@ -45,6 +44,11 @@ public class ProtocolApplyCommand extends Command {
     @Override
     public String getHelp() {
         return "prot_apply <protocol_id> <sample_id> - проверить, выполнен ли протокол";
+    }
+
+    @Override
+    public void startAdditionalInput(Scanner scanner) {
+
     }
 
     @Override
@@ -102,26 +106,7 @@ public class ProtocolApplyCommand extends Command {
                 System.out.print(p);
                 first = false;
             }
-
             System.out.println();
         }
-    }
-
-    @Override
-    public void startAdditionalInput(Scanner scanner) {
-        throw new UnsupportedOperationException(
-                "prot_apply не поддерживает дополнительный ввод");
-    }
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Command command = (Command) o;
-        return Objects.equals(getHelp(), command.getHelp());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getHelp());
     }
 }

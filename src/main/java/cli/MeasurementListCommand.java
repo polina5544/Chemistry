@@ -10,7 +10,7 @@ import java.util.*;
 import domain.*;
 import service.SampleService;
 
-public class MeasurementListCommand extends Command {
+public class MeasurementListCommand implements Command {
     private final SampleService sampleService;
     private final Set<Measurement> allMeasurements;
     private static final Set<String> VALID_PARAMS = new HashSet<>(Arrays.asList( //быстрый способ превратить перечисление элементов в список. в HashSet нам нужны только ключи (уникальные элементы). Чтобы не тратить память на создание разных объектов для значений, Java использует одну-единственную статическую константу-заглушку.
@@ -20,9 +20,7 @@ public class MeasurementListCommand extends Command {
                                   Set<Measurement> allMeasurements) {
         this.sampleService = sampleService;
         this.allMeasurements = allMeasurements;
-        this.requiredAdditionalInput = false;
     }
-
 
     @Override
     public void validateArgs(String[] args) {
@@ -75,6 +73,11 @@ public class MeasurementListCommand extends Command {
     }
 
     @Override
+    public void startAdditionalInput(Scanner scanner) {
+
+    }
+
+    @Override
     public void execute(String[] args) {
         long sampleId = Long.parseLong(args[0]);
 
@@ -108,7 +111,7 @@ public class MeasurementListCommand extends Command {
             }
         }
 
-        Collections.sort(filtered, new Comparator<Measurement>() {
+        Collections.sort (filtered, new Comparator<Measurement>() {
             @Override
             public int compare(Measurement m1, Measurement m2) {
                 return m2.getMeasuredAt().compareTo(m1.getMeasuredAt());
@@ -137,22 +140,5 @@ public class MeasurementListCommand extends Command {
                     "method = " + m.getMethod() + ", " +
                     "time = " + m.getMeasuredAt().atZone(java.time.ZoneId.systemDefault()).format(formatter));
         }
-    }
-
-    @Override
-    public void startAdditionalInput(Scanner scanner) {
-        throw new UnsupportedOperationException("meas_list не поддерживает дополнительный ввод");
-    }
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Command command = (Command) o; //это приведение типа (casting) это обьект типа command
-        return Objects.equals(getHelp(), command.getHelp());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getHelp());
     }
 }

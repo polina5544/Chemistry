@@ -12,7 +12,7 @@ import domain.SampleStatus;
 import service.SampleService;
 import validation.SampleValidation;
 
-public class SampleUpdateCommand extends Command {
+public class SampleUpdateCommand implements Command {
     private final SampleService sampleService;
     private static final Set<String> ALLOWED_FIELDS = new HashSet<>(Arrays.asList(
             "name", "type", "location", "status"
@@ -20,7 +20,6 @@ public class SampleUpdateCommand extends Command {
 
     public SampleUpdateCommand(SampleService sampleService) {
         this.sampleService = sampleService;
-        this.requiredAdditionalInput = false;
     }
 
     @Override
@@ -40,6 +39,11 @@ public class SampleUpdateCommand extends Command {
     @Override
     public String getHelp() {
         return "sample_update <id> field=value - изменить поля образца (name, type, location, status)";
+    }
+
+    @Override
+    public void startAdditionalInput(Scanner scanner) {
+
     }
 
     @Override
@@ -179,24 +183,6 @@ public class SampleUpdateCommand extends Command {
 
             updates.put(field, valuePart.trim());
         }
-
         return updates;
-    }
-
-    @Override
-    public void startAdditionalInput(Scanner scanner) {
-        throw new UnsupportedOperationException("sample_update не поддерживает дополнительный ввод");
-    }
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Command command = (Command) o;
-        return Objects.equals(getHelp(), command.getHelp());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getHelp());
     }
 }

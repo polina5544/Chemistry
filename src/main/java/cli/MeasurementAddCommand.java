@@ -8,11 +8,14 @@ package cli;
 import java.time.Instant;
 import java.util.*;
 import domain.*;
+
+import cli.Command;
 import service.SampleService;
 import validation.MeasurmentValidation;
 import utilits.IDgenerator;
 
-public class MeasurementAddCommand extends Command {
+public class MeasurementAddCommand implements Command {
+
     private final SampleService sampleService;
     private final Set<Measurement> allMeasurements;
     private long sampleId;
@@ -21,7 +24,6 @@ public class MeasurementAddCommand extends Command {
                                 Set<Measurement> allMeasurements) { // тип - контракт метода
         this.sampleService = sampleService;
         this.allMeasurements = allMeasurements;
-        this.requiredAdditionalInput = true;
     }
 
     @Override
@@ -38,8 +40,6 @@ public class MeasurementAddCommand extends Command {
             throw new IllegalArgumentException("Ошибка: id должен быть числом");
         }
     }
-
-
 
     @Override
     public String getHelp() {
@@ -162,19 +162,5 @@ public class MeasurementAddCommand extends Command {
 
             return input.trim();
         }
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Command command = (Command) o;
-        return Objects.equals(getHelp(), command.getHelp());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getHelp());
     }
 }

@@ -11,7 +11,7 @@ import domain.*;
 import utilits.IDgenerator;
 import validation.ProtocolValidation;
 
-public class ProtocolCreateCommand extends Command {
+public class ProtocolCreateCommand implements Command {
 
     private final Set<Protocol> protocolStorage;
     long nextProtocolId = IDgenerator.nextId();
@@ -19,7 +19,6 @@ public class ProtocolCreateCommand extends Command {
 
     public ProtocolCreateCommand(Set<Protocol> protocolStorage) {
         this.protocolStorage = protocolStorage;
-        this.requiredAdditionalInput = true;
     }
 
     @Override
@@ -92,16 +91,5 @@ public class ProtocolCreateCommand extends Command {
             System.out.println("Ошибка: ввод прерван");
         }
     }
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Command command = (Command) o;
-        return Objects.equals(getHelp(), command.getHelp());
-    }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(getHelp());
-    }
 }
