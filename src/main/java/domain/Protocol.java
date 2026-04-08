@@ -28,6 +28,9 @@ public class Protocol {
         this.updatedAt = updatedAt;
     }
 
+    public Protocol(long id, String name) {
+    }
+
     public long getId() { return id; }
     public String getOwnerUsername() { return ownerUsername; }
     public String getName() { return name; }

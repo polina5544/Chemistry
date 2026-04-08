@@ -50,6 +50,7 @@ public class Measurement {
     public Instant getMeasuredAt() { return measuredAt; }
     public String getOwnerUsername() { return ownerUsername; }
 
+
     public void setValue(double value) { this.value = value; }
     public void setUnit(String unit) { this.unit = unit; }
     public void setMethod(String method) { this.method = method; }
@@ -67,4 +68,5 @@ public class Measurement {
     public int hashCode() {
         return Objects.hash(id);
     }
+
 }

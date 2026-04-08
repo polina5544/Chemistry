@@ -4,13 +4,13 @@ import java.time.Instant;
 
 public class Sample {
 
-    private final long id;
+    private long id;
     private String name;
     private String type;
     private String location;
     private SampleStatus status;
     private String ownerUsername;
-    private final Instant createdAt;
+    private Instant createdAt;
     private Instant updatedAt;
 
     public Sample(long id,
@@ -30,6 +30,9 @@ public class Sample {
         this.ownerUsername = ownerUsername;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+    }
+
+    public Sample(long id, String name, SampleStatus status, String owner) {
     }
 
     public long getId() { return id; }
