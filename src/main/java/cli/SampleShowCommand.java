@@ -40,6 +40,12 @@ public class SampleShowCommand implements Command {
         return "sample_show <id> - показать карточку образца и статистику по измерениям";
     }
 
+
+    @Override
+    public boolean isRequiredAdditionalInput() {
+        return false;
+    }
+
     @Override
     public void execute(String[] args) {
 

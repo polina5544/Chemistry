@@ -8,7 +8,7 @@ public class Protocol {
 
     private long id;
     private String name;
-    private Set<MeasurementParam> requiredParams; //Коллекция Set, которая хранит обязательные параметры, Set тк нельзя дублировать параметры
+    private Set<MeasurementParam> requiredParams;
     private String ownerUsername;
     private Instant createdAt;
     private Instant updatedAt;
@@ -19,7 +19,6 @@ public class Protocol {
                     String ownerUsername,
                     Instant createdAt,
                     Instant updatedAt) {
-
         this.id = id;
         this.name = name;
         this.requiredParams = requiredParams;
@@ -28,7 +27,14 @@ public class Protocol {
         this.updatedAt = updatedAt;
     }
 
+    // Краткий конструктор для загрузки из XML
     public Protocol(long id, String name) {
+        this.id = id;
+        this.name = name;
+        this.requiredParams = new java.util.HashSet<>();
+        this.ownerUsername = "unknown";
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
     }
 
     public long getId() { return id; }
@@ -40,8 +46,8 @@ public class Protocol {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Measurement that = (Measurement) o;
-        return Objects.equals(id, that.getId());
+        Protocol that = (Protocol) o;           // ← был баг: кастил к Measurement
+        return id == that.id;
     }
 
     @Override

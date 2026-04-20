@@ -34,6 +34,11 @@ public class SampleListCommand implements Command {
     }
 
     @Override
+    public boolean isRequiredAdditionalInput() {
+        return false;
+    }
+
+    @Override
     public String getHelp() {
         return "sample_list [--status ACTIVE|ARCHIVED] [--mine] - вывести список образцов";
     }

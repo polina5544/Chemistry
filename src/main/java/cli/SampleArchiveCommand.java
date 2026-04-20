@@ -32,6 +32,11 @@ public class SampleArchiveCommand implements Command {
     }
 
     @Override
+    public boolean isRequiredAdditionalInput() {
+        return false;
+    }
+
+    @Override
     public String getHelp() {
         return "sample_archive <id> - перевести образец в ARCHIVED";
     }

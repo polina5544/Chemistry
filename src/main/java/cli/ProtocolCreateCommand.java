@@ -39,6 +39,11 @@ public class ProtocolCreateCommand implements Command {
     }
 
     @Override
+    public boolean isRequiredAdditionalInput() {
+        return true;
+    }
+
+    @Override
     public void startAdditionalInput(Scanner scanner) {
 
         try {

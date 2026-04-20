@@ -37,6 +37,11 @@ public class SampleUpdateCommand implements Command {
     }
 
     @Override
+    public boolean isRequiredAdditionalInput() {
+        return false;
+    }
+
+    @Override
     public String getHelp() {
         return "sample_update <id> field=value - изменить поля образца (name, type, location, status)";
     }

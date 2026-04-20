@@ -41,6 +41,11 @@ public class MeasurementStatsCommand implements Command {
     }
 
     @Override
+    public boolean isRequiredAdditionalInput() {
+        return false;
+    }
+
+    @Override
     public void execute(String[] args) {
 
         long sampleId = Long.parseLong(args[0]);

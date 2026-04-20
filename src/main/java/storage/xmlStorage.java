@@ -1,8 +1,10 @@
 package storage;
+
 import domain.Measurement;
-import domain.Sample;
 import domain.Protocol;
+import domain.Sample;
 import org.w3c.dom.*;
+
 import javax.xml.parsers.*;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
@@ -12,116 +14,106 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
-//отвечает только за работу с файлом - save - записывает данные в xml а load - читает xml и возвращает объекты
-
 public class xmlStorage {
-    //сохранение
+
     public void save(String path,
-                         Set<Sample> samples,
-                         Set<Measurement> measurements,
-                         Set<Protocol> protocols) {
-
+                     Set<Sample> samples,
+                     Set<Measurement> measurements,
+                     Set<Protocol> protocols) {
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder(); // умеет читать xml и создавать его
-            Document doc = builder.newDocument(); // создается пустой xml-документ
+            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document doc = builder.newDocument();
 
-            // корень
-            Element root = doc.createElement("data"); //создали корневой элемент data
+            Element root = doc.createElement("data");
             doc.appendChild(root);
 
-            // построение куска DOM с образцами
+            // samples
             Element samplesEl = doc.createElement("samples");
-            root.appendChild(samplesEl); //пришпандорили к корну data ( samples будут внутри)
+            root.appendChild(samplesEl);
 
             for (Sample s : samples) {
-                Element sampleEl = doc.createElement("sample");
-
-                sampleEl.appendChild(createElement(doc, "id", String.valueOf(s.getId())));
-                sampleEl.appendChild(createElement(doc, "name", s.getName()));
-                sampleEl.appendChild(createElement(doc, "status", s.getStatus().name()));
-                sampleEl.appendChild(createElement(doc, "owner", s.getOwnerUsername()));
-
-                samplesEl.appendChild(sampleEl);
+                Element el = doc.createElement("sample");
+                el.appendChild(create(doc, "id",       String.valueOf(s.getId())));
+                el.appendChild(create(doc, "name",     s.getName()));
+                el.appendChild(create(doc, "type",     s.getType() != null ? s.getType() : ""));
+                el.appendChild(create(doc, "location", s.getLocation() != null ? s.getLocation() : ""));
+                el.appendChild(create(doc, "status",   s.getStatus().name()));
+                el.appendChild(create(doc, "owner",    s.getOwnerUsername() != null ? s.getOwnerUsername() : ""));
+                samplesEl.appendChild(el);
             }
 
-            // так же присобачиваем образцы
+            // measurements
             Element measEl = doc.createElement("measurements");
             root.appendChild(measEl);
 
             for (Measurement m : measurements) {
-                Element mEl = doc.createElement("measurement");
-
-                mEl.appendChild(createElement(doc, "id", String.valueOf(m.getId())));
-                mEl.appendChild(createElement(doc, "sampleId", String.valueOf(m.getSampleId())));
-                mEl.appendChild(createElement(doc, "param", m.getParam().name()));
-                mEl.appendChild(createElement(doc, "value", String.valueOf(m.getValue())));
-                mEl.appendChild(createElement(doc, "unit", m.getUnit()));
-                mEl.appendChild(createElement(doc, "method", m.getMethod()));
-                mEl.appendChild(createElement(doc, "createdAt", m.getMeasuredAt().toString()));
-                measEl.appendChild(mEl);
+                Element el = doc.createElement("measurement");
+                el.appendChild(create(doc, "id",        String.valueOf(m.getId())));
+                el.appendChild(create(doc, "sampleId",  String.valueOf(m.getSampleId())));
+                el.appendChild(create(doc, "param",     m.getParam().name()));
+                el.appendChild(create(doc, "value",     String.valueOf(m.getValue())));
+                el.appendChild(create(doc, "unit",      m.getUnit()));
+                el.appendChild(create(doc, "method",    m.getMethod()));
+                el.appendChild(create(doc, "createdAt", m.getMeasuredAt().toString()));
+                measEl.appendChild(el);
             }
 
-            //так же присобачиваем протоколы
+            // protocols
             Element protEl = doc.createElement("protocols");
             root.appendChild(protEl);
 
             for (Protocol p : protocols) {
-                Element pEl = doc.createElement("protocol");
-                pEl.appendChild(createElement(doc, "id", String.valueOf(p.getId())));
-                pEl.appendChild(createElement(doc, "name", p.getName()));
-                protEl.appendChild(pEl);
+                Element el = doc.createElement("protocol");
+                el.appendChild(create(doc, "id",   String.valueOf(p.getId())));
+                el.appendChild(create(doc, "name", p.getName()));
+                protEl.appendChild(el);
             }
 
-            // запись в файл
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-
             transformer.transform(new DOMSource(doc), new StreamResult(new File(path)));
 
-            System.out.println("OK: данные сохранены в " + path);
-
         } catch (Exception e) {
-            throw new RuntimeException("Ошибка сохранения: " + e.getMessage());
+            throw new IllegalArgumentException("Ошибка сохранения: " + e.getMessage());
         }
     }
 
-    // загрузка
     public StorageData load(String path) {
-
         try {
             File file = new File(path);
-
-            if (!file.exists()) {
-                throw new IllegalArgumentException("Файл не найден");
-            }
+            if (!file.exists())
+                throw new IllegalArgumentException("Файл не найден: " + path);
 
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            Document doc = builder.parse(file); //Он берет свои внутренние инструменты (алгоритмы парсинга) и превращает текст файла в дерево объектов Java (Document).
+            Document doc = builder.parse(file);
 
-            doc.getDocumentElement().normalize();
+            new FileValidator().validate(doc);
 
-            Set<Sample> samples = new HashSet<>();
+            Set<Sample> samples   = new HashSet<>();
             Set<Measurement> measurements = new HashSet<>();
-            Set<Protocol> protocols = new HashSet<>();
+            Set<Protocol> protocols  = new HashSet<>();
 
-            NodeList sampleNodes = doc.getElementsByTagName("sample"); //NideList специальный тип данных (коллекция) в Java DOM API.
-
+            // samples
+            NodeList sampleNodes = doc.getElementsByTagName("sample");
             for (int i = 0; i < sampleNodes.getLength(); i++) {
-                Element el = (Element) sampleNodes.item(i); //кастинг как перестраховка
+                Element el = (Element) sampleNodes.item(i);
 
-                Sample s = new Sample( // так как тип - Element я имею доступ к расширенным функциям а именно методы Element которых нет у Node
+                // Используем полный конструктор - type и location берём из файла
+                Sample s = new Sample(
                         Long.parseLong(get(el, "id")),
                         get(el, "name"),
+                        getOrDefault(el, "type", "unknown"),
+                        getOrDefault(el, "location", "unknown"),
                         Enum.valueOf(domain.SampleStatus.class, get(el, "status")),
-                        get(el, "owner")
-                ); //собрали нормальный понятный жаве образец и добавили в нашу замечательную коллекцию
-
+                        getOrDefault(el, "owner", "unknown"),
+                        Instant.now(),
+                        Instant.now()
+                );
                 samples.add(s);
             }
 
+            // measurements
             NodeList measNodes = doc.getElementsByTagName("measurement");
-
             for (int i = 0; i < measNodes.getLength(); i++) {
                 Element el = (Element) measNodes.item(i);
 
@@ -137,40 +129,47 @@ public class xmlStorage {
                         Instant.now(),
                         Instant.now()
                 );
-
                 measurements.add(m);
             }
 
+            //protocols
             NodeList protNodes = doc.getElementsByTagName("protocol");
-
             for (int i = 0; i < protNodes.getLength(); i++) {
                 Element el = (Element) protNodes.item(i);
-
                 Protocol p = new Protocol(
                         Long.parseLong(get(el, "id")),
                         get(el, "name")
                 );
-
                 protocols.add(p);
             }
 
-            System.out.println("OK: данные загружены");
+            return new StorageData(samples, measurements, protocols);
 
-            return new StorageData(samples, measurements, protocols); //упаковвываем все загруженные данные в один объект
-
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Ошибка загрузки: " + e.getMessage());
+            throw new IllegalArgumentException("Ошибка загрузки: " + e.getMessage());
         }
     }
 
-    // вспомогательный метод
-    private Element createElement(Document doc, String name, String value) {
+    private Element create(Document doc, String name, String value) {
         Element el = doc.createElement(name);
-        el.appendChild(doc.createTextNode(value));
+        el.appendChild(doc.createTextNode(value != null ? value : ""));
         return el;
     }
 
-    private String get(Element el, String tag) {//выдаст список нод лист и возьмет из него самый первый элемент
-        return el.getElementsByTagName(tag).item(0).getTextContent();
+    private String get(Element el, String tag) {
+        NodeList list = el.getElementsByTagName(tag);
+        if (list == null || list.getLength() == 0)
+            throw new IllegalArgumentException("Отсутствует тег <" + tag + ">");
+        return list.item(0).getTextContent().trim();
+    }
+
+    // Возвращает значение тега или defaultValue, если тег отсутствует
+    private String getOrDefault(Element el, String tag, String defaultValue) {
+        NodeList list = el.getElementsByTagName(tag);
+        if (list == null || list.getLength() == 0) return defaultValue;
+        String val = list.item(0).getTextContent().trim();
+        return val.isEmpty() ? defaultValue : val;
     }
 }

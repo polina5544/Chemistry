@@ -52,6 +52,14 @@ public class FileValidator {
                 );
             }
 
+            long sampleId = parseLong(get(el, "id"), "sample.id");
+
+            if (sampleId <= 0) {
+                throw new IllegalArgumentException(
+                        "Ошибка загрузки: id должен быть > 0 у sample id=" + sampleId
+                );
+            }
+
             if (!sampleIdsSeen.add(SampleId)) {
                 throw new IllegalArgumentException(
                         "Ошибка загрузки: id не уникален у sample id=" + SampleId
@@ -134,18 +142,24 @@ public class FileValidator {
         return ids;
     }
 
-    // проверка наличия тега
     private String get(Element el, String tag) {
+        NodeList list = el.getElementsByTagName(tag);
 
-        Node node = el.getElementsByTagName(tag).item(0);
-
-        if (node == null) {
+        if (list == null || list.getLength() == 0 || list.item(0) == null) {
             throw new IllegalArgumentException(
-                    "Ошибка загрузки: отсутствует тег " + tag
+                    "Ошибка XML: у sample нет тега <" + tag + ">"
             );
         }
 
-        return node.getTextContent();
+        String value = list.item(0).getTextContent();
+
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Ошибка XML: тег <" + tag + "> пустой"
+            );
+        }
+
+        return value;
     }
 
     private long parseLong(String value, String field) {

@@ -33,6 +33,11 @@ public class ExitCommand implements Command {
     }
 
     @Override
+    public boolean isRequiredAdditionalInput() {
+        return false;
+    }
+
+    @Override
     public void execute(String[] args) {
         validateArgs(args);
         System.out.println("Завершение работы...");

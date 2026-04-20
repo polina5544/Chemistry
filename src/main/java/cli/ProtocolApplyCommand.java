@@ -52,6 +52,11 @@ public class ProtocolApplyCommand implements Command{
     }
 
     @Override
+    public boolean isRequiredAdditionalInput() {
+        return false;
+    }
+
+    @Override
     public void execute(String[] args) {
 
         long protocolId = Long.parseLong(args[0]);

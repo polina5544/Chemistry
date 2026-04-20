@@ -36,6 +36,11 @@ public class SampleAddCommand implements Command {
     public void execute(String[] args) {}
 
     @Override
+    public boolean isRequiredAdditionalInput() {
+        return true;
+    }
+
+    @Override
     public void startAdditionalInput(Scanner scanner) {
 
         String name = promptForField(scanner, "name", null, null, null, null);

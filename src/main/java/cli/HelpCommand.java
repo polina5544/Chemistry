@@ -54,4 +54,9 @@ public class HelpCommand implements Command {
     public void startAdditionalInput(Scanner scanner) {
 
     }
+
+    @Override
+    public boolean isRequiredAdditionalInput() {
+        return false;
+    }
 }

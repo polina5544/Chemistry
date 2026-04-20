@@ -27,6 +27,11 @@ public class MeasurementAddCommand implements Command {
     }
 
     @Override
+    public boolean isRequiredAdditionalInput() {
+        return true;
+    }
+
+    @Override
     public void validateArgs(String[] args) {
         if (args == null || args.length < 1) {
             throw new IllegalArgumentException("Ошибка: укажите id образца");

@@ -10,7 +10,7 @@ import java.util.*;
 import domain.*;
 import service.SampleService;
 
-public class MeasurementListCommand extends Command {
+public class MeasurementListCommand implements Command {
     private final SampleService sampleService;
     private final Set<Measurement> allMeasurements;
     private static final Set<String> VALID_PARAMS = new HashSet<>(Arrays.asList( //быстрый способ превратить перечисление элементов в список. в HashSet нам нужны только ключи (уникальные элементы). Чтобы не тратить память на создание разных объектов для значений, Java использует одну-единственную статическую константу-заглушку.
@@ -20,9 +20,12 @@ public class MeasurementListCommand extends Command {
                                   Set<Measurement> allMeasurements) {
         this.sampleService = sampleService;
         this.allMeasurements = allMeasurements;
-        this.requiredAdditionalInput = false;
     }
 
+    @Override
+    public boolean isRequiredAdditionalInput() {
+        return false;
+    }
 
     @Override
     public void validateArgs(String[] args) {

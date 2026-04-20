@@ -9,4 +9,5 @@ public interface Command {
     boolean equals(Object o);
     int hashCode();
     void startAdditionalInput(Scanner scanner);
+    boolean isRequiredAdditionalInput();
 }

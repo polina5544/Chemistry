@@ -21,7 +21,6 @@ public class Sample {
                   String ownerUsername,
                   Instant createdAt,
                   Instant updatedAt) {
-
         this.id = id;
         this.name = name;
         this.type = type;
@@ -32,7 +31,18 @@ public class Sample {
         this.updatedAt = updatedAt;
     }
 
-    public Sample(long id, String name, SampleStatus status, String owner) {
+    // Краткий конструктор для UI и загрузки из XML
+    // type и location получают заглушку, чтобы объект прошёл через валидацию
+    // ВАЖНО: после загрузки из XML используй полный конструктор (см. xmlStorage)
+    public Sample(long id, String name, SampleStatus status, String ownerUsername) {
+        this.id = id;
+        this.name = name;
+        this.type = "unknown";
+        this.location = "unknown";
+        this.status = status;
+        this.ownerUsername = ownerUsername;
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
     }
 
     public long getId() { return id; }
@@ -49,5 +59,5 @@ public class Sample {
     public void setLocation(String location) { this.location = location; }
     public void setStatus(SampleStatus status) { this.status = status; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
-    public void setOwnerUsername() { this.ownerUsername =  ownerUsername; }
+    public void setOwnerUsername(String ownerUsername) { this.ownerUsername = ownerUsername; }
 }

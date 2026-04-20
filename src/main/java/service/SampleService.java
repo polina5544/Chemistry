@@ -9,13 +9,13 @@ import java.util.*;
 
 public class SampleService {
 
-    private final Map<Long, Sample> storage = new HashMap<>();
-    long Id = IDgenerator.nextId();
+    // Единое хранилище — только Map
+    private final Map<Long, Sample> storage = new LinkedHashMap<>();
 
     public Sample add(String name, String type, String location, String owner) {
-
+        long id = IDgenerator.nextId();
         Sample sample = new Sample(
-                Id,
+                id,
                 name,
                 type,
                 location,
@@ -24,11 +24,8 @@ public class SampleService {
                 Instant.now(),
                 Instant.now()
         );
-
         SampleValidation.validate(sample);
-
-        storage.put(Id, sample);
-
+        storage.put(id, sample);
         return sample;
     }
 
@@ -39,16 +36,29 @@ public class SampleService {
         return s;
     }
 
+    // Используется из UI (Add через диалог)
+    public void addSample(Sample sample) {
+        if (sample == null)
+            throw new IllegalArgumentException("Sample не может быть null");
+        if (storage.containsKey(sample.getId()))
+            throw new IllegalArgumentException("Sample с таким id уже существует: " + sample.getId());
+        storage.put(sample.getId(), sample);
+    }
+
+    // Используется после загрузки из XML
+    public void setSamples(Collection<Sample> newSamples) {
+        storage.clear();
+        for (Sample s : newSamples) {
+            storage.put(s.getId(), s);
+        }
+    }
+
+    public void deleteSample(long id) {
+        if (storage.remove(id) == null)
+            throw new IllegalArgumentException("Sample с id=" + id + " не найден");
+    }
+
     public List<Sample> getAll() {
         return new ArrayList<>(storage.values());
-    }
-
-    public void update(Sample sample) {
-        SampleValidation.validate(sample);
-    }
-
-    public void remove(long id) {
-        if (storage.remove(id) == null)
-            throw new NoSuchElementException("Ошибка: объект не найден");
     }
 }
