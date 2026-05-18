@@ -1,15 +1,19 @@
 package ui;
 
 import javafx.application.Platform;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.beans.property.*;
+
 import domain.Sample;
 import domain.SampleStatus;
 import domain.Measurement;
 import domain.Protocol;
+
 import service.SampleService;
 import storage.StorageService;
 import storage.StorageData;
@@ -58,47 +62,69 @@ public class MainController {
     }
 
     private void setupTable() {
-        TableColumn<Sample, String> idCol = new TableColumn<>("ID");
-        idCol.setCellValueFactory(c ->
-                new javafx.beans.property.SimpleStringProperty(String.valueOf(c.getValue().getId())));
-        idCol.setPrefWidth(50);
+        setupTableColumns();
+        setupTableData();
+        setupSelectionListener();
+    }
 
-        TableColumn<Sample, String> nameCol = new TableColumn<>("Name");
-        nameCol.setCellValueFactory(c ->
-                new javafx.beans.property.SimpleStringProperty(c.getValue().getName()));
-        nameCol.setPrefWidth(200);
+    private void setupTableColumns() {
+        TableColumn<Sample, String> idColumn = createColumn("ID", 50,
+                sample -> String.valueOf(sample.getId()));
+        TableColumn<Sample, String> nameColumn = createColumn("Name", 200,
+                Sample::getName);
+        TableColumn<Sample, String> typeColumn = createColumn("Type", 120,
+                Sample::getType);
+        TableColumn<Sample, String> statusColumn = createColumn("Status", 100,
+                sample -> sample.getStatus().name());
+        table.getColumns().addAll(idColumn, nameColumn, typeColumn, statusColumn);
+    }
 
-        TableColumn<Sample, String> typeCol = new TableColumn<>("Type");
-        typeCol.setCellValueFactory(c ->
-                new javafx.beans.property.SimpleStringProperty(c.getValue().getType()));
-        typeCol.setPrefWidth(120);
-
-        TableColumn<Sample, String> statusCol = new TableColumn<>("Status");
-        statusCol.setCellValueFactory(c ->
-                new javafx.beans.property.SimpleStringProperty(c.getValue().getStatus().name()));
-        statusCol.setPrefWidth(100);
-
-        table.getColumns().addAll(idCol, nameCol, typeCol, statusCol);
-        table.setItems(data);
-
-        // Master-detail
-        table.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, selected) -> {
-            if (selected != null) {
-                long measCount = allMeasurements.stream()
-                        .filter(m -> m.getSampleId() == selected.getId())
-                        .count();
-
-                details.setText(
-                        "ID: "       + selected.getId()             + "\n" +
-                                "Name: "     + selected.getName()           + "\n" +
-                                "Type: "     + selected.getType()           + "\n" +
-                                "Location: " + selected.getLocation()       + "\n" +
-                                "Status: "   + selected.getStatus()         + "\n" +
-                                "Owner: "    + selected.getOwnerUsername()  + "\n" +
-                                "Измерений: "+ measCount
-                );
-            }
+    private TableColumn<Sample, String> createColumn(String title, double width,
+                                                     java.util.function.Function<Sample, String> extractor) {
+        TableColumn<Sample, String> column = new TableColumn<>(title);
+        column.setCellValueFactory(cellData -> {
+            Sample sample = cellData.getValue();
+            return new SimpleStringProperty(extractor.apply(sample));
         });
+        column.setPrefWidth(width);
+        return column;
+    }
+
+    private void setupTableData() {table.setItems(data);}
+
+    private void setupSelectionListener() {
+        table.getSelectionModel().selectedItemProperty().addListener
+                ((obs, oldVal, selected) -> {
+            updateDetailsPanel(selected);
+        });
+    }
+
+    private void updateDetailsPanel(Sample selected) {
+        if (selected == null) {
+            details.setText("Выберите образец из списка");
+            return;
+        }
+
+        long measCount = countMeasurementsForSample(selected.getId());
+        details.setText(buildDetailsText(selected, measCount));
+    }
+
+    private long countMeasurementsForSample(long sampleId) {
+        return allMeasurements.stream()
+                .filter(m -> m.getSampleId() == sampleId)
+                .count();
+    }
+
+    private String buildDetailsText(Sample sample, long measurementsCount) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("ID: ").append(sample.getId()).append("\n");
+        sb.append("Name: ").append(sample.getName()).append("\n");
+        sb.append("Type: ").append(sample.getType()).append("\n");
+        sb.append("Location: ").append(sample.getLocation()).append("\n");
+        sb.append("Status: ").append(sample.getStatus()).append("\n");
+        sb.append("Owner: ").append(sample.getOwnerUsername()).append("\n");
+        sb.append("Измерений: ").append(measurementsCount);
+        return sb.toString();
     }
 
     private void setupButtons() {
@@ -254,11 +280,9 @@ public class MainController {
     private void showError(String msg) {
         Platform.runLater(() -> new Alert(Alert.AlertType.ERROR, msg).showAndWait());
     }
-
     private void showInfo(String msg) {
         Platform.runLater(() -> new Alert(Alert.AlertType.INFORMATION, msg).showAndWait());
     }
-
     public Pane getView() {
         return root;
     }

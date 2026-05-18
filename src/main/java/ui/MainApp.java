@@ -12,7 +12,7 @@ public class MainApp extends Application {
     public void start(Stage stage) {
         MainController controller = new MainController();
         Scene scene = new Scene(controller.getView(), 860, 520);
-        stage.setTitle("Лабораторные образцы — НОЦ Инфохимии");
+        stage.setTitle("");
         stage.setScene(scene);
         stage.show();
     }

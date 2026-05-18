@@ -1,5 +1,7 @@
 package domain;
 
+import utilits.IDgenerator;
+
 import java.time.Instant;
 
 public class Sample {
@@ -35,7 +37,7 @@ public class Sample {
     // type и location получают заглушку, чтобы объект прошёл через валидацию
     // ВАЖНО: после загрузки из XML используй полный конструктор (см. xmlStorage)
     public Sample(long id, String name, SampleStatus status, String ownerUsername) {
-        this.id = id;
+        this.id = IDgenerator.nextId();
         this.name = name;
         this.type = "unknown";
         this.location = "unknown";

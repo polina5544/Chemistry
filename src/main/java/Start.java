@@ -2,20 +2,18 @@ import java.util.*;
 import cli.*;
 import domain.*;
 import service.*;
-import storage.StorageService;
 
 public class Start {
 
     public static void main(String[] args) {
+        // создали зависимости по принципу dependency injection - патерн
+
         SampleService sampleService = new SampleService();
         Set<Measurement> measurements = new HashSet<>();
         Set<Protocol> protocols = new HashSet<>();
-        StorageService storageService = new StorageService();
 
-        // Если путь к файлу передан аргументом командной строки — загружаем сразу
-        String filePath = args.length > 0 ? args[0] : null;
-
-        Start app = new Start(sampleService, measurements, protocols, storageService, filePath);
+        // в start передали зависимости
+        Start app = new Start(sampleService, measurements, protocols);
         app.run();
     }
 
@@ -23,40 +21,31 @@ public class Start {
     private final SampleService sampleService;
     private final Set<Measurement> allMeasurements;
     private final Set<Protocol> protocolStorage;
-    private final StorageService storageService;
     private boolean running = true;
     private final Scanner scanner = new Scanner(System.in);
 
+    // передали зпвисимости через конструктор
     public Start(SampleService sampleService,
                  Set<Measurement> allMeasurements,
-                 Set<Protocol> protocolStorage,
-                 StorageService storageService,
-                 String initialFilePath) {
+                 Set<Protocol> protocolStorage) {
         this.sampleService = sampleService;
         this.allMeasurements = allMeasurements;
         this.protocolStorage = protocolStorage;
-        this.storageService = storageService;
         registerCommands();
-
-        // Авто-загрузка при старте
-        if (initialFilePath != null) {
-            try {
-                LoadCommand loader = new LoadCommand(sampleService, allMeasurements, protocolStorage, storageService);
-                loader.execute(new String[]{initialFilePath});
-            } catch (Exception e) {
-                System.out.println("Не удалось загрузить файл при старте: " + e.getMessage());
-            }
-        }
     }
 
     private void registerCommands() {
+
         commands.add(new HelpCommand(commands));
-        commands.add(new ExitCommand(() -> running = false));
 
-        commands.add(new SaveCommand(sampleService, allMeasurements, protocolStorage, storageService));
-        commands.add(new LoadCommand(sampleService, allMeasurements, protocolStorage, storageService));
+        commands.add(new ExitCommand(() -> running = false)); //лямбда-выражение - это реализация метода run
 
-        commands.add(new ProtocolApplyCommand(sampleService, protocolStorage, allMeasurements));
+        commands.add(new ProtocolApplyCommand(
+                sampleService,
+                protocolStorage,
+                allMeasurements
+        ));
+
         commands.add(new ProtocolCreateCommand(protocolStorage));
         commands.add(new SampleAddCommand(sampleService));
         commands.add(new SampleArchiveCommand(sampleService));
@@ -79,17 +68,19 @@ public class Start {
     }
 
     public void run() {
+
         System.out.println("Система управления лабораторными образцами и измерениями по протоколу");
         System.out.println("Чтобы просмотреть доступные команды, введите help");
 
         while (running) {
             System.out.print("> ");
             String input = scanner.nextLine().trim();
+
             if (input.isEmpty()) continue;
 
             String[] parts = input.split("\\s+");
             String commandName = parts[0].toLowerCase();
-            String[] cmdArgs = Arrays.copyOfRange(parts, 1, parts.length);
+            String[] args = Arrays.copyOfRange(parts, 1, parts.length);
 
             Command command = findCommandByName(commandName);
 
@@ -100,15 +91,17 @@ public class Start {
             }
 
             try {
-                command.validateArgs(cmdArgs);
+                command.validateArgs(args);
+
                 if (command.isRequiredAdditionalInput()) {
                     command.startAdditionalInput(scanner);
                 } else {
-                    command.execute(cmdArgs);
+                    command.execute(args);
                 }
-            } catch (IllegalArgumentException e) {
+
+            } catch (IllegalArgumentException e) { // проверка на пользовательский ввод
                 System.out.println(e.getMessage());
-            } catch (Exception e) {
+            } catch (Exception e) { //системная ошибка на уровне всей программы
                 System.out.println("Непредвиденная ошибка: " + e.getMessage());
             }
         }

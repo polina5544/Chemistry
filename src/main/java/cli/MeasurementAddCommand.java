@@ -3,13 +3,10 @@ package cli;
 /*
  * meas_add <id> - добавить измерение к образцу
  */
-
-
 import java.time.Instant;
 import java.util.*;
 import domain.*;
 
-import cli.Command;
 import service.SampleService;
 import validation.MeasurmentValidation;
 import utilits.IDgenerator;
@@ -40,7 +37,10 @@ public class MeasurementAddCommand implements Command {
             throw new IllegalArgumentException("Ошибка: meas_add принимает только id образца");
         }
         try {
-            Long.parseLong(args[0]);
+            this.sampleId = Long.parseLong(args[0]);
+            if (this.sampleId <= 0) {
+                throw new IllegalArgumentException("Ошибка: id должен быть положительным числом");
+            }
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Ошибка: id должен быть числом");
         }

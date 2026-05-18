@@ -55,7 +55,7 @@ public class SampleService {
 
     public void deleteSample(long id) {
         if (storage.remove(id) == null)
-            throw new IllegalArgumentException("Sample с id=" + id + " не найден");
+            throw new IllegalArgumentException("Sample с id =" + id + " не найден");
     }
 
     public List<Sample> getAll() {

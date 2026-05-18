@@ -15,7 +15,7 @@ public class IDgenerator {
         return currentId++;
     }
 
-    // 🔥 универсальное обновление по всем сущностям
+    // универсальное обновление по всем сущностям
     public static void updateAll(Set<Sample> samples,
                                  Set<Measurement> measurements,
                                  Set<Protocol> protocols) {

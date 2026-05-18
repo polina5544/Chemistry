@@ -3,10 +3,12 @@ package cli;
 /*
  * save <path> - сохранить данные в xml
  */
+
 //Команда собирает все данные из памяти в один контейнер
 // StorageData и передаёт его в StorageService, который уже знает как
 // записать это в xml. Сама команда не знает про xml она просто говорит
 // сервису сохрани вот это
+
 import domain.Measurement;
 import domain.Protocol;
 import domain.Sample;

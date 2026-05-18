@@ -24,7 +24,7 @@ public class MeasurementListCommand implements Command {
 
     @Override
     public boolean isRequiredAdditionalInput() {
-        return false;
+        return true;
     }
 
     @Override
