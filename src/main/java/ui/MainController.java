@@ -262,6 +262,7 @@ public class MainController {
         details.setText("Выберите образец из списка");
     }
 
+
     private void setupLayout() {
         // Детали справа
         VBox right = new VBox(10, new Label("─── Детали ───"), details);
@@ -271,6 +272,86 @@ public class MainController {
         // Кнопки снизу
         HBox buttons = new HBox(10, refreshBtn, saveBtn, addBtn, deleteBtn);
         buttons.setPadding(new Insets(10));
+        root.setStyle("""
+    -fx-background-color: #FFF0F5;
+""");
+
+        table.setStyle("""
+    -fx-background-color: white;
+    -fx-border-color: #FFB6C1;
+    -fx-border-radius: 8;
+""");
+        table.setStyle("""
+    -fx-background-color: transparent;
+    -fx-control-inner-background: #FFF5F8;
+    -fx-table-cell-border-color: transparent;
+    -fx-padding: 5;
+""");
+
+        table.setRowFactory(tv -> new TableRow<>() {
+            @Override
+            protected void updateItem(Sample item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null) {
+                    setStyle("");
+                }
+                else if (getIndex() % 2 == 0) {
+
+                    // светло-розовый
+                    setStyle("""
+                -fx-background-color:#FFF0F5;
+            """);
+                }
+                else {
+
+                    // чуть темнее розовый
+                    setStyle("""
+                -fx-background-color:#FFE4EC;
+            """);
+                }
+            }
+        });
+        table.setRowFactory(tv -> {
+            TableRow<Sample> row = new TableRow<>();
+
+            row.itemProperty().addListener((obs, oldItem, item) -> {
+                if (item == null) return;
+
+                if (row.getIndex() % 2 == 0)
+                    row.setStyle("-fx-background-color:#FFF0F5;");
+                else
+                    row.setStyle("-fx-background-color:#FFE4EC;");
+            });
+
+            row.selectedProperty().addListener((obs,b,c)->{
+                if(c)
+                    row.setStyle("""
+                -fx-background-color:#FFB6C1;
+                -fx-text-fill:white;
+            """);
+            });
+
+            return row;
+        });
+
+        details.setStyle("""
+    -fx-font-size: 14px;
+    -fx-text-fill: #8B4A62;
+""");
+
+        String buttonStyle = """
+    -fx-background-color: #FFB6C1;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-background-radius: 12;
+    -fx-padding: 8 16;
+""";
+
+        refreshBtn.setStyle(buttonStyle);
+        saveBtn.setStyle(buttonStyle);
+        addBtn.setStyle(buttonStyle);
+        deleteBtn.setStyle(buttonStyle);
 
         root.setCenter(table);
         root.setRight(right);
