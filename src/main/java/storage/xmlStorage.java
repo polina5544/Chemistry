@@ -3,6 +3,7 @@ package storage;
 import domain.Measurement;
 import domain.Protocol;
 import domain.Sample;
+import domain.User;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.*;
@@ -19,7 +20,10 @@ public class xmlStorage {
     public void save(String path,
                      Set<Sample> samples,
                      Set<Measurement> measurements,
-                     Set<Protocol> protocols) {
+                     Set<Protocol> protocols,
+                     Set<User> users
+
+    ) {
         try {
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             Document doc = builder.newDocument();
@@ -40,6 +44,17 @@ public class xmlStorage {
                 el.appendChild(create(doc, "status",   s.getStatus().name()));
                 el.appendChild(create(doc, "owner",    s.getOwnerUsername() != null ? s.getOwnerUsername() : ""));
                 samplesEl.appendChild(el);
+            }
+
+            // users
+            Element usersEl = doc.createElement("users");
+            root.appendChild(usersEl);
+
+            for(User u:users){
+                Element el = doc.createElement("user");
+                el.appendChild(create(doc, "login", u.getLogin()));
+                el.appendChild(create(doc, "passwordHash", u.getPasswordHash()));
+                usersEl.appendChild(el);
             }
 
             // measurements
@@ -88,10 +103,10 @@ public class xmlStorage {
             Document doc = builder.parse(file);
 
             new FileValidator().validate(doc);
-
             Set<Sample> samples   = new HashSet<>();
             Set<Measurement> measurements = new HashSet<>();
             Set<Protocol> protocols  = new HashSet<>();
+            Set<User> users  = new HashSet<>();
 
             // samples
             NodeList sampleNodes = doc.getElementsByTagName("sample");
@@ -143,7 +158,17 @@ public class xmlStorage {
                 protocols.add(p);
             }
 
-            return new StorageData(samples, measurements, protocols);
+            NodeList userNodes = doc.getElementsByTagName("user");
+            for (int i = 0; i < userNodes.getLength(); i++) {
+                Element el = (Element) userNodes.item(i);
+                String login = get(el, "login");
+                String hash  = get(el, "passwordHash");
+                if (login != null && hash != null) {
+                    users.add(new User(login, hash, true));
+                }
+            }
+
+            return new StorageData(samples, measurements, protocols, users);
 
         } catch (IllegalArgumentException e) {
             throw e;

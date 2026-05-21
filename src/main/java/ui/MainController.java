@@ -1,5 +1,6 @@
 package ui;
 
+import domain.*;
 import javafx.application.Platform;
 
 import javafx.collections.FXCollections;
@@ -9,12 +10,9 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.beans.property.*;
 
-import domain.Sample;
-import domain.SampleStatus;
-import domain.Measurement;
-import domain.Protocol;
-
 import service.SampleService;
+import service.UserService;
+import service.UserSession;
 import storage.StorageService;
 import storage.StorageData;
 import utilits.IDgenerator;
@@ -26,13 +24,16 @@ public class MainController {
 
     private final StorageService storageService = new StorageService();
     private final SampleService sampleService = new SampleService();
+    private final UserService    userService    = new UserService();
+    private final UserSession    userSession    = new UserSession();
+
 
     // Хранилища в памяти — нужны для сохранения
     private final Set<Measurement> allMeasurements = new HashSet<>();
     private final Set<Protocol> allProtocols = new HashSet<>();
+    private final Set<User> users = new HashSet<>();
 
     private final ObservableList<Sample> data = FXCollections.observableArrayList();
-
     private final TableView<Sample> table = new TableView<>();
     private final Label details = new Label("Выберите образец из списка");
 
@@ -144,7 +145,7 @@ public class MainController {
         saveBtn.setOnAction(e -> {
             try {
                 Set<Sample> samples = new HashSet<>(sampleService.getAll());
-                StorageData data = new StorageData(samples, allMeasurements, allProtocols);
+                StorageData data = new StorageData(samples, allMeasurements, allProtocols, users);
                 storageService.save(filePath, data);
                 showInfo("Сохранено в " + filePath);
             } catch (Exception ex) {
@@ -248,15 +249,15 @@ public class MainController {
 
     // Применяем загруженные данные в память и обновляем таблицу
     private void applyLoadedData(StorageData loaded) {
-        sampleService.setSamples(loaded.getSamples());
+        sampleService.setSamples(loaded.samples());
 
         allMeasurements.clear();
-        allMeasurements.addAll(loaded.getMeasurements());
+        allMeasurements.addAll(loaded.measurements());
 
         allProtocols.clear();
-        allProtocols.addAll(loaded.getProtocols());
+        allProtocols.addAll(loaded.protocols());
 
-        IDgenerator.updateAll(loaded.getSamples(), loaded.getMeasurements(), loaded.getProtocols());
+        IDgenerator.updateAll(loaded.samples(), loaded.measurements(), loaded.protocols());
 
         data.setAll(sampleService.getAll());
         details.setText("Выберите образец из списка");

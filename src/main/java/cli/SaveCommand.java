@@ -12,7 +12,9 @@ package cli;
 import domain.Measurement;
 import domain.Protocol;
 import domain.Sample;
+import domain.User;
 import service.SampleService;
+import service.UserService;
 import storage.StorageData;
 import storage.StorageService;
 
@@ -26,15 +28,18 @@ public class SaveCommand implements Command {
     private final Set<Measurement> allMeasurements;
     private final Set<Protocol> protocolStorage;
     private final StorageService storageService;
+    private final UserService userService;
 
     public SaveCommand(SampleService sampleService,
                        Set<Measurement> allMeasurements,
                        Set<Protocol> protocolStorage,
-                       StorageService storageService) {
+                       StorageService storageService,
+                       UserService userService) {
         this.sampleService = sampleService;
         this.allMeasurements = allMeasurements;
         this.protocolStorage = protocolStorage;
         this.storageService = storageService;
+        this.userService = userService;
     }
 
     @Override
@@ -53,8 +58,11 @@ public class SaveCommand implements Command {
     public void execute(String[] args) {
         String path = args[0];
         Set<Sample> samples = new HashSet<>(sampleService.getAll()); //конвертация типа так как StorageData ожидает Set а гет алл возвращает лист
-
-        StorageData data = new StorageData(samples, allMeasurements, protocolStorage);
+        Set<User> users =
+                new HashSet<>(
+                        userService.getAll()
+                );
+        StorageData data = new StorageData(samples, allMeasurements, protocolStorage, users);
         storageService.save(path, data);
         //делегируем работу сервису
         // StorageService внутри вызывает xmlStorage.save,

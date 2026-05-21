@@ -7,12 +7,11 @@ package cli;
 
 import domain.Measurement;
 import domain.Protocol;
-import domain.Sample;
 import service.SampleService;
+import service.UserService;
 import storage.StorageData;
 import storage.StorageService;
 import utilits.IDgenerator;
-
 import java.util.Scanner;
 import java.util.Set;
 
@@ -22,15 +21,18 @@ public class LoadCommand implements Command {
     private final Set<Measurement> allMeasurements;
     private final Set<Protocol> protocolStorage;
     private final StorageService storageService;
+    private final UserService userService;
 
     public LoadCommand(SampleService sampleService,
                        Set<Measurement> allMeasurements,
                        Set<Protocol> protocolStorage,
-                       StorageService storageService) {
+                       StorageService storageService,
+                       UserService userService) {
         this.sampleService = sampleService;
         this.allMeasurements = allMeasurements;
         this.protocolStorage = protocolStorage;
         this.storageService = storageService;
+        this.userService =  userService;
     }
 
     @Override
@@ -52,22 +54,25 @@ public class LoadCommand implements Command {
         // Загружаем а если файл невалиден исключение вылетит до изменения памяти
         StorageData loaded = storageService.load(path);
 
+        userService.setUsers(loaded.users());
+
         // Только после успешной загрузки применяем данные в память
-        sampleService.setSamples(loaded.getSamples());
+        sampleService.setSamples(loaded.samples());
 
         allMeasurements.clear();
-        allMeasurements.addAll(loaded.getMeasurements());
+        allMeasurements.addAll(loaded.measurements());
 
         protocolStorage.clear();
-        protocolStorage.addAll(loaded.getProtocols());
+        protocolStorage.addAll(loaded.protocols());
 
         // Обновляем счётчик ай ди, чтобы не было коллизий
-        IDgenerator.updateAll(loaded.getSamples(), loaded.getMeasurements(), loaded.getProtocols());
+        IDgenerator.updateAll(loaded.samples(), loaded.measurements(), loaded.protocols());
 
         System.out.println("OK, загружено из " + path +
-                ": " + loaded.getSamples().size() + " образцов, " +
-                loaded.getMeasurements().size() + " измерений, " +
-                loaded.getProtocols().size() + " протоколов");
+                ": " + loaded.samples().size() + " образцов, " +
+                loaded.measurements().size() + " измерений, " +
+                loaded.protocols().size() + " протоколов" +
+                loaded.users().size() + " пользователей");
     }
 
     @Override
