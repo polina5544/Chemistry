@@ -32,7 +32,7 @@ public class LoginDialog {
 //     Показывает диалог и ждёт результата
     public boolean show() {
         Dialog<Boolean> dialog = new Dialog<>();
-        dialog.setTitle("⚗️ Лабораторная система");
+        dialog.setTitle("Лабораторная система");
 
         // Запрещаем закрытие крестиком без входа
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CANCEL);
@@ -40,7 +40,7 @@ public class LoginDialog {
         dialog.getDialogPane().lookupButton(ButtonType.CANCEL).setVisible(false);
 
         // ── Заголовок ────────────────────────────────────────────────────────
-        Label titleLabel = new Label("⚗️  Добро пожаловать!");
+        Label titleLabel = new Label("Добро пожаловать!");
         titleLabel.setFont(Font.font("Georgia", 20));
         titleLabel.setTextFill(Color.web("#d63384"));
 

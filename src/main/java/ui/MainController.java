@@ -146,6 +146,7 @@ public class MainController {
             try {
                 Set<Sample> samples = new HashSet<>(sampleService.getAll());
                 StorageData data = new StorageData(samples, allMeasurements, allProtocols, users);
+                new HashSet<>(userService.getAll());
                 storageService.save(filePath, data);
                 showInfo("Сохранено в " + filePath);
             } catch (Exception ex) {
@@ -192,6 +193,8 @@ public class MainController {
                             locationField.getText().isBlank() ||
                             ownerField.getText().isBlank()
             );
+            //(что изменилось,старое значение,новое значение) - иначе проверка бы происходила только при нажатии ОК
+
             nameField.textProperty().addListener((o, a, b) -> checkFields.run());
             typeField.textProperty().addListener((o, a, b) -> checkFields.run());
             locationField.textProperty().addListener((o, a, b) -> checkFields.run());
@@ -213,6 +216,7 @@ public class MainController {
                 return null;
             });
 
+            //TODO разобраться что это вообще такое
             dialog.showAndWait().ifPresent(sample -> {
                 try {
                     sampleService.addSample(sample);
