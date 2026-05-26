@@ -22,9 +22,6 @@ public class SampleValidation {
 
         if (s.getLocation().length() > 64)
             throw new IllegalArgumentException("Ошибка: location слишком длинное (макс. 64 символа)");
-
-        if (s.getOwnerUsername() == null || s.getOwnerUsername().isBlank())
-            throw new IllegalArgumentException("Ошибка: нужен создатель, образец не сам себя создал!");
     }
 }
 

@@ -42,7 +42,14 @@
         <version>25</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version>
+        </dependency>
+
     </dependencies>
+
 
     <build>
         <plugins>
@@ -55,7 +62,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>Start</mainClass>
+                            <mainClass>MainApp</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

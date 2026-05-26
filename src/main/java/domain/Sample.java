@@ -1,5 +1,6 @@
 package domain;
 
+import service.UserSession;
 import utilits.IDgenerator;
 
 import java.time.Instant;
@@ -11,9 +12,9 @@ public class Sample {
     private String type;
     private String location;
     private SampleStatus status;
-    private String ownerUsername;
     private Instant createdAt;
     private Instant updatedAt;
+    private String ownerUsername;
 
     public Sample(long id,
                   String name,
@@ -28,9 +29,9 @@ public class Sample {
         this.type = type;
         this.location = location;
         this.status = status;
-        this.ownerUsername = ownerUsername;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+
     }
 
     // Краткий конструктор для UI и загрузки из XML
@@ -42,7 +43,6 @@ public class Sample {
         this.type = "unknown";
         this.location = "unknown";
         this.status = status;
-        this.ownerUsername = ownerUsername;
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
     }
@@ -52,14 +52,15 @@ public class Sample {
     public String getType() { return type; }
     public String getLocation() { return location; }
     public SampleStatus getStatus() { return status; }
-    public String getOwnerUsername() { return ownerUsername; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+    public String getOwnerUsername() {
+        return ownerUsername;
+    }
 
     public void setName(String name) { this.name = name; }
     public void setType(String type) { this.type = type; }
     public void setLocation(String location) { this.location = location; }
     public void setStatus(SampleStatus status) { this.status = status; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
-    public void setOwnerUsername(String ownerUsername) { this.ownerUsername = ownerUsername; }
 }

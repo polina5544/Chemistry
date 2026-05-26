@@ -11,7 +11,7 @@ import service.UserService;
 import service.UserSession;
 
 //LoginDialog - окно авторизации/регистрации.
-// Показывается ДО главного окна (в MainApp.start()).
+// Показывается ДО главного окна (в MainApp.start())
 // Пользователь выбирает - войти или зарегистрироваться
 // Если закрыть окно без входа - приложение завершается
 
@@ -39,7 +39,7 @@ public class LoginDialog {
         // Скрываем стандартные кнопки - сделаем свои
         dialog.getDialogPane().lookupButton(ButtonType.CANCEL).setVisible(false);
 
-        // ── Заголовок ────────────────────────────────────────────────────────
+        // Заголовок
         Label titleLabel = new Label("Добро пожаловать!");
         titleLabel.setFont(Font.font("Georgia", 20));
         titleLabel.setTextFill(Color.web("#d63384"));
@@ -98,6 +98,7 @@ public class LoginDialog {
 
         //Переключение режима
         toggleBtn.setOnAction(e -> {
+            //хранит текущий режим - регистрация или вход
             isRegisterMode = !isRegisterMode;
             if (isRegisterMode) {
                 modeLabel.setText("Регистрация");
@@ -116,11 +117,18 @@ public class LoginDialog {
                 passRepeatField.setManaged(false);
                 passRepeatLabel.setManaged(false);
             }
+            //Очищает текст в поле вывода ошибок - убирает старые уведомления об ошибках
             errorLabel.setText("");
+            //dialog — Объект всплывающего окна
+            // getDialogPane() -  метод, возвращающий корневую панель диалога
+            // getScene() - метод, получающий текущую сцену  этой панели
+            // getWindow() - метод, получающий само графическое окно операционной системы
+            // sizeToScene() - метод, который автоматически сжимает или растягивает окно
+            // под размер изменившегося содержимого (так как поле повтора пароля то появляется, то исчезает)
             dialog.getDialogPane().getScene().getWindow().sizeToScene();
         });
 
-        // ── Логика кнопки Войти/Зарегистрироваться
+        // Логика кнопки Войти/Зарегистрироваться
         actionBtn.setOnAction(e -> {
             String login = loginField.getText().trim();
             String pass  = passField.getText().trim();
@@ -155,14 +163,19 @@ public class LoginDialog {
 
         // Layout
         GridPane grid = new GridPane();
+        //setHgap - метод задающий горизонтальный зазор (отступ) между колонками
         grid.setHgap(12);
+        // вертикальный зазор
         grid.setVgap(10);
+        //setPadding - метод для установки внутренних отступов всей таблицы от краев
+        // new Insets - создание объекта внутренних отступов
         grid.setPadding(new Insets(8, 0, 8, 0));
 
         grid.add(pinkLabel("Логин:"), 0, 0);    grid.add(loginField,       1, 0);
         grid.add(pinkLabel("Пароль:"), 0, 1);   grid.add(passField,        1, 1);
         grid.add(passRepeatLabel, 0, 2);         grid.add(passRepeatField,  1, 2);
 
+        //VBox - ласс контейнера, который выстраивает все элементы вертикально, один под другим
         VBox content = new VBox(12,
                 header,
                 modeLabel,
@@ -171,13 +184,21 @@ public class LoginDialog {
                 actionBtn,
                 toggleBtn
         );
+        //setAlignment - метод для выравнивания содержимого внутри контейнера
+        // Pos.CENTER - Константа из JavaFX, указывающая, что все элементы
+        // внутри VBox должны стоять строго по центру
+
         content.setAlignment(Pos.CENTER);
         content.setPadding(new Insets(24, 32, 16, 32));
+        //Позволяют писать многострочный текст без использования плюсов и переносов строк
         content.setStyle("""
                 -fx-background-color: #fff0f6;
                 """);
+        // Метод устанавливающий предпочтительную ширину для контейнера
         content.setPrefWidth(380);
 
+        // завершаем создание диалогового окна
+        //getDialogPane - Метод который достает внутреннюю графическую панель
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().setStyle("""
                 -fx-background-color: #fff0f6;
@@ -186,10 +207,15 @@ public class LoginDialog {
                 """);
 
         // Enter в поле пароля это нажать кнопку
+        //fire - Метод JavaFX который программно «нажимает» на кнопку, имитируя реальный клик мышкой
         passField.setOnAction(e -> actionBtn.fire());
         loginField.setOnAction(e -> passField.requestFocus());
 
+        //var — Ключевое слово для автоматического определения типа переменной
         var result = dialog.showAndWait();
+        //showAndWait -  открывает окно на экране и полностью останавливает
+        // выполнение остального кода программы до тех пор, пока пользователь не
+        // закроет это окно
         return result.isPresent() && result.get();
     }
 

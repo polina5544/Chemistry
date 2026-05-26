@@ -1,64 +1,107 @@
 package service;
 
-import domain.*;
-import utilits.IDgenerator;
+import db.SampleRepository;
+import domain.Sample;
+import domain.SampleStatus;
 import validation.SampleValidation;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.NoSuchElementException;
 
+/**
+ * SampleService — бизнес-логика для образцов.
+ *
+ * Каждый вызов метода идёт напрямую в PostgreSQL через SampleRepository.
+ * Никакого хранения в памяти (HashMap, List) больше нет — всё в БД.
+ *
+ * Цепочка: Команда/UI → SampleService (логика) → SampleRepository (SQL) → PostgreSQL
+ */
 public class SampleService {
 
-    // Единое хранилище — только Map
-    private final Map<Long, Sample> storage = new LinkedHashMap<>();
+    // Единственное хранилище — PostgreSQL через репозиторий
+    private final SampleRepository repo = new SampleRepository();
 
+    /**
+     * Создать новый образец через CLI (sample_add).
+     * Валидируем поля → сохраняем в БД → возвращаем с id от БД.
+     *
+     * @param owner логин создателя (берётся из UserSession автоматически)
+     */
     public Sample add(String name, String type, String location, String owner) {
-        long id = IDgenerator.nextId();
-        Sample sample = new Sample(
-                id,
-                name,
-                type,
-                location,
-                SampleStatus.ACTIVE,
-                owner,
-                Instant.now(),
-                Instant.now()
-        );
+        // Создаём объект с id=0 — заглушка, настоящий id придёт из БД после INSERT
+        Sample sample = new Sample(0L, name, type, location,
+                SampleStatus.ACTIVE, owner, Instant.now(), Instant.now());
+
+        // Проверяем бизнес-правила: не пустые поля, длина и т.д.
         SampleValidation.validate(sample);
-        storage.put(id, sample);
-        return sample;
+
+        // repo.save() делает INSERT и возвращает объект с реальным id от PostgreSQL
+        return repo.save(sample);
     }
 
+    /**
+     * Найти образец по id или бросить исключение.
+     */
     public Sample getById(long id) {
-        Sample s = storage.get(id);
-        if (s == null)
-            throw new NoSuchElementException("Ошибка: объект с id " + id + " не найден");
+        Sample s = repo.findById(id);
+        if (s == null) {
+            throw new NoSuchElementException("Ошибка: образец с id=" + id + " не найден");
+        }
         return s;
     }
 
-    // Используется из UI (Add через диалог)
-    public void addSample(Sample sample) {
-        if (sample == null)
+    /**
+     * Добавить готовый объект Sample (используется из UI-диалога Add).
+     * id в объекте игнорируется — БД присвоит свой.
+     * Возвращает сохранённый объект с реальным id.
+     */
+    public Sample addSample(Sample sample) {
+        if (sample == null) {
             throw new IllegalArgumentException("Sample не может быть null");
-        if (storage.containsKey(sample.getId()))
-            throw new IllegalArgumentException("Sample с таким id уже существует: " + sample.getId());
-        storage.put(sample.getId(), sample);
-    }
-
-    // Используется после загрузки из XML
-    public void setSamples(Collection<Sample> newSamples) {
-        storage.clear();
-        for (Sample s : newSamples) {
-            storage.put(s.getId(), s);
         }
+        SampleValidation.validate(sample);
+
+        // repo.save() вернёт образец с id от PostgreSQL
+        return repo.save(sample);
     }
 
+    /**
+     * Обновить поля образца в БД.
+     */
+    public void update(Sample sample) {
+        SampleValidation.validate(sample);
+        repo.update(sample);
+    }
+
+    /**
+     * Удалить образец. Измерения удалятся через CASCADE в схеме БД.
+     */
     public void deleteSample(long id) {
-        if (storage.remove(id) == null)
-            throw new IllegalArgumentException("Sample с id =" + id + " не найден");
+        // Просто удаляем из БД — никакого HashMap больше нет
+        repo.delete(id);
     }
 
+    /**
+     * Все образцы из БД.
+     */
     public List<Sample> getAll() {
-        return new ArrayList<>(storage.values());
+        return repo.findAll();
+    }
+
+    /**
+     * Образцы по статусу.
+     */
+    public List<Sample> getByStatus(SampleStatus status) {
+        return repo.findByStatus(status);
+    }
+
+    /**
+     * Оставлен для совместимости со старым кодом — больше не нужен.
+     * Данные теперь в PostgreSQL, не в памяти.
+     */
+    public void setSamples(Collection<Sample> ignored) {
+        // Ничего не делаем — данные в БД
     }
 }

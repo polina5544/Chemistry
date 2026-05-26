@@ -2,374 +2,313 @@ package ui;
 
 import domain.*;
 import javafx.application.Platform;
-
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.beans.property.*;
 
 import service.SampleService;
-import service.UserService;
 import service.UserSession;
-import storage.StorageService;
-import storage.StorageData;
-import utilits.IDgenerator;
 
-import java.util.HashSet;
-import java.util.Set;
-
+/**
+ * MainController — главное окно приложения.
+ *
+ * Источник данных — PostgreSQL через SampleService → SampleRepository.
+ * Никакого XML, никакого StorageService здесь нет.
+ *
+ * Кнопки:
+ *   Refresh — перечитать образцы из БД
+ *   Add     — диалог создания нового образца (owner = текущий пользователь)
+ *   Delete  — удалить выбранный образец из БД
+ *   Save    — не нужна (данные сохраняются в БД сразу при Add)
+ */
 public class MainController {
 
-    private final StorageService storageService = new StorageService();
+    // SampleService — единственный путь к данным
     private final SampleService sampleService = new SampleService();
-    private final UserService    userService    = new UserService();
-    private final UserSession    userSession    = new UserSession();
+    private final UserSession userSession;
 
-
-    // Хранилища в памяти — нужны для сохранения
-    private final Set<Measurement> allMeasurements = new HashSet<>();
-    private final Set<Protocol> allProtocols = new HashSet<>();
-    private final Set<User> users = new HashSet<>();
-
+    // ObservableList — список который автоматически обновляет таблицу при изменении
     private final ObservableList<Sample> data = FXCollections.observableArrayList();
     private final TableView<Sample> table = new TableView<>();
     private final Label details = new Label("Выберите образец из списка");
 
     private final Button refreshBtn = new Button("Refresh");
-    private final Button saveBtn    = new Button("Save");
     private final Button addBtn     = new Button("Add");
     private final Button deleteBtn  = new Button("Delete");
 
-    private final String filePath = MainApp.filePath;
-    private final BorderPane root  = new BorderPane();
+    private final BorderPane root = new BorderPane();
 
-    public MainController() {
+    public MainController(UserSession userSession) {
+        this.userSession = userSession;
         setupTable();
         setupButtons();
         setupLayout();
-        loadOnStart();
+
+        // При старте загружаем все образцы из БД
+        refreshFromDb();
     }
 
-    // Авто-загрузка при старте, если файл существует
-    private void loadOnStart() {
+    // ── Загрузка из БД ────────────────────────────────────────────────────────
+
+    /**
+     * Читает все образцы из PostgreSQL и обновляет таблицу.
+     * Вызывается при старте и при нажатии Refresh.
+     */
+    private void refreshFromDb() {
         try {
-            StorageData loaded = storageService.load(filePath);
-            applyLoadedData(loaded);
+
+            var all = sampleService.getAll();
+
+            System.out.println(
+                    "FROM DB = " + all.size()
+            );
+
+            for (var s : all) {
+                System.out.println(
+                        s.getId() + " "
+                                + s.getName()
+                );
+            }
+
+            data.setAll(all);
+
         } catch (Exception e) {
-            // Файл может не существовать при первом запуске и это норм
+            showError(e.getMessage());
         }
     }
 
+    // ── Таблица ───────────────────────────────────────────────────────────────
+
     private void setupTable() {
-        setupTableColumns();
-        setupTableData();
-        setupSelectionListener();
-    }
+        // Создаём столбцы таблицы
+        table.getColumns().addAll(
+                makeCol("ID",       60,  s -> String.valueOf(s.getId())),
+                makeCol("Name",     200, Sample::getName),
+                makeCol("Type",     120, Sample::getType),
+                makeCol("Location", 140, Sample::getLocation),
+                makeCol("Status",   100, s -> s.getStatus().name()),
+                makeCol("Owner",    120, s -> s.getOwnerUsername() != null
+                        ? s.getOwnerUsername() : "—")
+        );
 
-    private void setupTableColumns() {
-        TableColumn<Sample, String> idColumn = createColumn("ID", 50,
-                sample -> String.valueOf(sample.getId()));
-        TableColumn<Sample, String> nameColumn = createColumn("Name", 200,
-                Sample::getName);
-        TableColumn<Sample, String> typeColumn = createColumn("Type", 120,
-                Sample::getType);
-        TableColumn<Sample, String> statusColumn = createColumn("Status", 100,
-                sample -> sample.getStatus().name());
-        table.getColumns().addAll(idColumn, nameColumn, typeColumn, statusColumn);
-    }
+        // Подключаем список данных к таблице
+        table.setItems(data);
+        table.setPlaceholder(new Label("Нет образцов. Нажми Add!"));
 
-    private TableColumn<Sample, String> createColumn(String title, double width,
-                                                     java.util.function.Function<Sample, String> extractor) {
-        TableColumn<Sample, String> column = new TableColumn<>(title);
-        column.setCellValueFactory(cellData -> {
-            Sample sample = cellData.getValue();
-            return new SimpleStringProperty(extractor.apply(sample));
-        });
-        column.setPrefWidth(width);
-        return column;
-    }
+        // При клике на строку — показываем детали справа
+        table.getSelectionModel().selectedItemProperty().addListener(
+                (obs, old, selected) -> showDetails(selected));
 
-    private void setupTableData() {table.setItems(data);}
-
-    private void setupSelectionListener() {
-        table.getSelectionModel().selectedItemProperty().addListener
-                ((obs, oldVal, selected) -> {
-            updateDetailsPanel(selected);
+        // Чередование розовых строк
+        table.setRowFactory(tv -> {
+            TableRow<Sample> row = new TableRow<>();
+            row.itemProperty().addListener((obs, o, item) -> {
+                if (item == null) { row.setStyle(""); return; }
+                row.setStyle(row.getIndex() % 2 == 0
+                        ? "-fx-background-color:#FFF0F5;"
+                        : "-fx-background-color:#FFE4EC;");
+            });
+            row.selectedProperty().addListener((obs, b, sel) -> {
+                if (sel) row.setStyle("-fx-background-color:#FFB6C1;");
+            });
+            return row;
         });
     }
 
-    private void updateDetailsPanel(Sample selected) {
-        if (selected == null) {
+    /**
+     * Создать столбец таблицы.
+     * extractor — функция которая достаёт нужное поле из объекта Sample.
+     */
+    private TableColumn<Sample, String> makeCol(String title, double width,
+                                                java.util.function.Function<Sample, String> extractor) {
+        TableColumn<Sample, String> col = new TableColumn<>(title);
+        // setCellValueFactory говорит колонке: "для каждой строки вызови extractor"
+        col.setCellValueFactory(cd -> new SimpleStringProperty(extractor.apply(cd.getValue())));
+        col.setPrefWidth(width);
+        return col;
+    }
+
+    /**
+     * Показать детали выбранного образца в правой панели.
+     */
+    private void showDetails(Sample s) {
+        if (s == null) {
             details.setText("Выберите образец из списка");
             return;
         }
-
-        long measCount = countMeasurementsForSample(selected.getId());
-        details.setText(buildDetailsText(selected, measCount));
+        details.setText(
+                "ID: "       + s.getId()            + "\n\n" +
+                        "Name: "     + s.getName()          + "\n\n" +
+                        "Type: "     + s.getType()          + "\n\n" +
+                        "Location: " + s.getLocation()      + "\n\n" +
+                        "Status: "   + s.getStatus()        + "\n\n" +
+                        "Owner: "    + (s.getOwnerUsername() != null ? s.getOwnerUsername() : "—")
+        );
     }
 
-    private long countMeasurementsForSample(long sampleId) {
-        return allMeasurements.stream()
-                .filter(m -> m.getSampleId() == sampleId)
-                .count();
-    }
-
-    private String buildDetailsText(Sample sample, long measurementsCount) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("ID: ").append(sample.getId()).append("\n");
-        sb.append("Name: ").append(sample.getName()).append("\n");
-        sb.append("Type: ").append(sample.getType()).append("\n");
-        sb.append("Location: ").append(sample.getLocation()).append("\n");
-        sb.append("Status: ").append(sample.getStatus()).append("\n");
-        sb.append("Owner: ").append(sample.getOwnerUsername()).append("\n");
-        sb.append("Измерений: ").append(measurementsCount);
-        return sb.toString();
-    }
+    // ── Кнопки ───────────────────────────────────────────────────────────────
 
     private void setupButtons() {
 
-        // Refresh
+        // Refresh — перечитать из БД
         refreshBtn.setOnAction(e -> {
-            try {
-                StorageData loaded = storageService.load(filePath);
-                applyLoadedData(loaded);
-                showInfo("Данные обновлены из " + filePath);
-            } catch (Exception ex) {
-                showError("Ошибка загрузки: " + ex.getMessage());
-            }
+            refreshFromDb();
+            showInfo("Данные обновлены из БД");
         });
 
-        // Save
-        saveBtn.setOnAction(e -> {
-            try {
-                Set<Sample> samples = new HashSet<>(sampleService.getAll());
-                StorageData data = new StorageData(samples, allMeasurements, allProtocols, users);
-                new HashSet<>(userService.getAll());
-                storageService.save(filePath, data);
-                showInfo("Сохранено в " + filePath);
-            } catch (Exception ex) {
-                showError("Ошибка сохранения: " + ex.getMessage());
-            }
-        });
-
-        // Add
+        // Add — диалог создания нового образца
         addBtn.setOnAction(e -> {
             Dialog<Sample> dialog = new Dialog<>();
-            dialog.setTitle("Добавить образец");
+            dialog.setTitle("Новый образец");
+            dialog.setHeaderText("Создаёт: " + userSession.getCurrentLogin());
 
-            ButtonType okBtn = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
-            dialog.getDialogPane().getButtonTypes().addAll(okBtn, ButtonType.CANCEL);
+            ButtonType okType = new ButtonType("Добавить", ButtonBar.ButtonData.OK_DONE);
+            dialog.getDialogPane().getButtonTypes().addAll(okType, ButtonType.CANCEL);
 
-            TextField nameField     = new TextField();
-            TextField typeField     = new TextField();
-            TextField locationField = new TextField();
-            TextField ownerField    = new TextField();
+            TextField nameField     = styledField("Например: Речная вода");
+            TextField typeField     = styledField("Например: water");
+            TextField locationField = styledField("Например: Лаб. 204");
 
             ComboBox<SampleStatus> statusBox = new ComboBox<>();
             statusBox.getItems().addAll(SampleStatus.values());
             statusBox.setValue(SampleStatus.ACTIVE);
 
             GridPane grid = new GridPane();
-            grid.setHgap(10);
-            grid.setVgap(10);
-            grid.setPadding(new Insets(10));
-
-            grid.add(new Label("Name:"),     0, 0); grid.add(nameField,     1, 0);
-            grid.add(new Label("Type:"),     0, 1); grid.add(typeField,     1, 1);
-            grid.add(new Label("Location:"), 0, 2); grid.add(locationField, 1, 2);
-            grid.add(new Label("Owner:"),    0, 3); grid.add(ownerField,    1, 3);
-            grid.add(new Label("Status:"),   0, 4); grid.add(statusBox,     1, 4);
+            grid.setHgap(12); grid.setVgap(10);
+            grid.setPadding(new Insets(16));
+            grid.add(pinkLabel("Name:"),     0, 0); grid.add(nameField,     1, 0);
+            grid.add(pinkLabel("Type:"),     0, 1); grid.add(typeField,     1, 1);
+            grid.add(pinkLabel("Location:"), 0, 2); grid.add(locationField, 1, 2);
+            grid.add(pinkLabel("Status:"),   0, 3); grid.add(statusBox,     1, 3);
+            // Owner не вводим — подставляется из сессии автоматически
+            grid.add(pinkLabel("Owner:"),    0, 4);
+            grid.add(new Label(userSession.getCurrentLogin()), 1, 4);
 
             dialog.getDialogPane().setContent(grid);
 
-            // Активируем кнопку OK только если все поля заполнены
-            javafx.scene.Node okNode = dialog.getDialogPane().lookupButton(okBtn);
+            // Кнопка OK активна только если все поля заполнены
+            javafx.scene.Node okNode = dialog.getDialogPane().lookupButton(okType);
             okNode.setDisable(true);
-            Runnable checkFields = () -> okNode.setDisable(
+            Runnable check = () -> okNode.setDisable(
                     nameField.getText().isBlank() ||
-                            typeField.getText().isBlank() ||
-                            locationField.getText().isBlank() ||
-                            ownerField.getText().isBlank()
-            );
-            //(что изменилось,старое значение,новое значение) - иначе проверка бы происходила только при нажатии ОК
+                            typeField.getText().isBlank()  ||
+                            locationField.getText().isBlank());
+            nameField.textProperty().addListener((o, a, b) -> check.run());
+            typeField.textProperty().addListener((o, a, b) -> check.run());
+            locationField.textProperty().addListener((o, a, b) -> check.run());
 
-            nameField.textProperty().addListener((o, a, b) -> checkFields.run());
-            typeField.textProperty().addListener((o, a, b) -> checkFields.run());
-            locationField.textProperty().addListener((o, a, b) -> checkFields.run());
-            ownerField.textProperty().addListener((o, a, b) -> checkFields.run());
+            // Собираем объект Sample из полей диалога
+            // id = 0 — заглушка, настоящий id придёт из PostgreSQL
+            dialog.setResultConverter(btn -> btn == okType
+                    ? new Sample(0L,
+                    nameField.getText().trim(),
+                    typeField.getText().trim(),
+                    locationField.getText().trim(),
+                    statusBox.getValue(),
+                    userSession.getCurrentLogin(), // owner из сессии!
+                    java.time.Instant.now(),
+                    java.time.Instant.now())
+                    : null);
 
-            dialog.setResultConverter(btn -> {
-                if (btn == okBtn) {
-                    return new Sample(
-                            IDgenerator.nextId(),
-                            nameField.getText().trim(),
-                            typeField.getText().trim(),
-                            locationField.getText().trim(),
-                            statusBox.getValue(),
-                            ownerField.getText().trim(),
-                            java.time.Instant.now(),
-                            java.time.Instant.now()
-                    );
-                }
-                return null;
-            });
-
-            //TODO разобраться что это вообще такое
             dialog.showAndWait().ifPresent(sample -> {
                 try {
+
                     sampleService.addSample(sample);
-                    data.add(sample);           // обновляем таблицу сразу
+
+                    // перечитать реальные данные из PostgreSQL
+                    refreshFromDb();
+
                 } catch (Exception ex) {
-                    showError(ex.getMessage());
+                    showError("Ошибка добавления: " + ex.getMessage());
                 }
             });
         });
 
-        // Delete
+        // Delete — удалить выбранный образец
         deleteBtn.setOnAction(e -> {
             Sample selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) {
                 showError("Выберите образец в таблице");
                 return;
             }
-            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                    "Удалить образец «" + selected.getName() + "»?",
-                    ButtonType.OK, ButtonType.CANCEL);
-            confirm.showAndWait().ifPresent(btn -> {
-                if (btn == ButtonType.OK) {
-                    try {
-                        sampleService.deleteSample(selected.getId());
-                        data.remove(selected);
-                        details.setText("Выберите образец из списка");
-                    } catch (Exception ex) {
-                        showError(ex.getMessage());
-                    }
-                }
-            });
+            new Alert(Alert.AlertType.CONFIRMATION,
+                    "Удалить «" + selected.getName() + "»?",
+                    ButtonType.OK, ButtonType.CANCEL)
+                    .showAndWait().ifPresent(btn -> {
+                        if (btn == ButtonType.OK) {
+                            try {
+                                // DELETE FROM samples WHERE id = ?
+                                sampleService.deleteSample(selected.getId());
+
+                                refreshFromDb();
+
+                                details.setText("Выберите образец из списка");
+                            } catch (Exception ex) {
+                                showError("Ошибка удаления: " + ex.getMessage());
+                            }
+                        }
+                    });
         });
     }
 
-    // Применяем загруженные данные в память и обновляем таблицу
-    private void applyLoadedData(StorageData loaded) {
-        sampleService.setSamples(loaded.samples());
-
-        allMeasurements.clear();
-        allMeasurements.addAll(loaded.measurements());
-
-        allProtocols.clear();
-        allProtocols.addAll(loaded.protocols());
-
-        IDgenerator.updateAll(loaded.samples(), loaded.measurements(), loaded.protocols());
-
-        data.setAll(sampleService.getAll());
-        details.setText("Выберите образец из списка");
-    }
-
+    // ── Layout ────────────────────────────────────────────────────────────────
 
     private void setupLayout() {
-        // Детали справа
-        VBox right = new VBox(10, new Label("─── Детали ───"), details);
-        right.setPadding(new Insets(10));
+        // Панель деталей справа
+        VBox right = new VBox(10, pinkLabel("─── Детали ───"), details);
+        right.setPadding(new Insets(12));
         right.setPrefWidth(220);
+        right.setStyle("-fx-background-color:#FFF0F5; " +
+                "-fx-border-color:#FFB6C1; -fx-border-width:0 0 0 1;");
+        details.setStyle("-fx-font-size:13px; -fx-text-fill:#8B4A62; -fx-font-family:Georgia;");
+        details.setWrapText(true);
 
-        // Кнопки снизу
-        HBox buttons = new HBox(10, refreshBtn, saveBtn, addBtn, deleteBtn);
+        // Кнопки снизу (Save убрана — данные сохраняются сразу в БД)
+        HBox buttons = new HBox(10, refreshBtn, addBtn, deleteBtn);
         buttons.setPadding(new Insets(10));
-        root.setStyle("""
-    -fx-background-color: #FFF0F5;
-""");
+        buttons.setStyle("-fx-background-color:#FFE4EC; " +
+                "-fx-border-color:#FFB6C1; -fx-border-width:1 0 0 0;");
 
-        table.setStyle("""
-    -fx-background-color: white;
-    -fx-border-color: #FFB6C1;
-    -fx-border-radius: 8;
-""");
-        table.setStyle("""
-    -fx-background-color: transparent;
-    -fx-control-inner-background: #FFF5F8;
-    -fx-table-cell-border-color: transparent;
-    -fx-padding: 5;
-""");
+        String btnStyle = "-fx-background-color:#FFB6C1; -fx-text-fill:white; " +
+                "-fx-font-size:13px; -fx-font-family:Georgia; " +
+                "-fx-font-weight:bold; -fx-background-radius:14; -fx-padding:8 18;";
+        refreshBtn.setStyle(btnStyle);
+        addBtn.setStyle(btnStyle);
+        deleteBtn.setStyle(btnStyle);
 
-        table.setRowFactory(tv -> new TableRow<>() {
-            @Override
-            protected void updateItem(Sample item, boolean empty) {
-                super.updateItem(item, empty);
-
-                if (empty || item == null) {
-                    setStyle("");
-                }
-                else if (getIndex() % 2 == 0) {
-
-                    // светло-розовый
-                    setStyle("""
-                -fx-background-color:#FFF0F5;
-            """);
-                }
-                else {
-
-                    // чуть темнее розовый
-                    setStyle("""
-                -fx-background-color:#FFE4EC;
-            """);
-                }
-            }
-        });
-        table.setRowFactory(tv -> {
-            TableRow<Sample> row = new TableRow<>();
-
-            row.itemProperty().addListener((obs, oldItem, item) -> {
-                if (item == null) return;
-
-                if (row.getIndex() % 2 == 0)
-                    row.setStyle("-fx-background-color:#FFF0F5;");
-                else
-                    row.setStyle("-fx-background-color:#FFE4EC;");
-            });
-
-            row.selectedProperty().addListener((obs,b,c)->{
-                if(c)
-                    row.setStyle("""
-                -fx-background-color:#FFB6C1;
-                -fx-text-fill:white;
-            """);
-            });
-
-            return row;
-        });
-
-        details.setStyle("""
-    -fx-font-size: 14px;
-    -fx-text-fill: #8B4A62;
-""");
-
-        String buttonStyle = """
-    -fx-background-color: #FFB6C1;
-    -fx-text-fill: white;
-    -fx-font-size: 14px;
-    -fx-background-radius: 12;
-    -fx-padding: 8 16;
-""";
-
-        refreshBtn.setStyle(buttonStyle);
-        saveBtn.setStyle(buttonStyle);
-        addBtn.setStyle(buttonStyle);
-        deleteBtn.setStyle(buttonStyle);
-
+        root.setStyle("-fx-background-color:#FFF0F5;");
         root.setCenter(table);
         root.setRight(right);
         root.setBottom(buttons);
     }
 
+    // ── Вспомогательные ──────────────────────────────────────────────────────
+
+    private static TextField styledField(String prompt) {
+        TextField tf = new TextField();
+        tf.setPromptText(prompt);
+        tf.setPrefWidth(210);
+        tf.setStyle("-fx-border-color:#f48fb1; -fx-border-radius:6; " +
+                "-fx-background-radius:6; -fx-padding:6 10;");
+        return tf;
+    }
+
+    private static Label pinkLabel(String text) {
+        Label l = new Label(text);
+        l.setStyle("-fx-text-fill:#880e4f; -fx-font-weight:bold; -fx-font-family:Georgia;");
+        return l;
+    }
+
     private void showError(String msg) {
         Platform.runLater(() -> new Alert(Alert.AlertType.ERROR, msg).showAndWait());
     }
+
     private void showInfo(String msg) {
         Platform.runLater(() -> new Alert(Alert.AlertType.INFORMATION, msg).showAndWait());
     }
-    public Pane getView() {
-        return root;
-    }
+
+    public Pane getView() { return root; }
 }

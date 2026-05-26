@@ -6,43 +6,50 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import service.UserService;
 import service.UserSession;
-import storage.StorageData;
-import storage.StorageService;
 
+/**
+ * MainApp — точка входа JavaFX.
+ *
+ * Порядок:
+ * 1. Показываем LoginDialog (вход или регистрация)
+ * 2. Если вошли — открываем MainController
+ * 3. Если закрыли без входа — выходим
+ *
+ * Никакого XML и StorageService здесь нет — данные в PostgreSQL.
+ */
 public class MainApp extends Application {
 
-    public static String filePath;
-    private final UserService userService    = new UserService();
-    private final UserSession    userSession    = new UserSession();
-    private final StorageService storageService = new StorageService();
+    public static String filePath = "data.xml"; // оставлен для совместимости с CLI
 
+    private final UserService userService = new UserService();
+    private final UserSession userSession = new UserSession();
 
     @Override
     public void start(Stage stage) {
 
-        StorageData loaded = storageService.load(filePath);
-        userService.setUsers(loaded.users());
-
-        //окно авторизации
+        // Шаг 1: показываем окно входа/регистрации
+        // UserService при register/authenticate работает с PostgreSQL напрямую
         LoginDialog loginDialog = new LoginDialog(userService, userSession);
         boolean loggedIn = loginDialog.show();
 
         if (!loggedIn) {
-            // Закрыли без входа - выходим
-            //TODO РАЗОБРАТЬ ПЛАТФОРМ
+            // Пользователь закрыл окно без входа
             Platform.exit();
             return;
         }
-        MainController controller = new MainController();
-        Scene scene = new Scene(controller.getView(), 860, 520);
-        stage.setTitle("");
+
+        // Шаг 2: открываем главное окно
+        // MainController получает userSession чтобы знать кто вошёл (для owner)
+        MainController controller = new MainController(userSession);
+        Scene scene = new Scene(controller.getView(), 900, 540);
+
+        stage.setTitle("⚗️ Лабораторные образцы — " + userSession.getCurrentLogin());
         stage.setScene(scene);
         stage.show();
     }
 
     public static void main(String[] args) {
-        // Путь к файлу можно передать аргументом: java -jar app.jar data.xml
-        filePath = (args.length > 0) ? args[0] : "data.xml";
+        if (args.length > 0) filePath = args[0];
         launch();
     }
 }
