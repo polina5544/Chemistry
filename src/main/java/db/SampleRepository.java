@@ -8,24 +8,28 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * SampleRepository — все SQL-операции с таблицей samples.
- *
- * Важно: id генерирует PostgreSQL (BIGSERIAL = автоинкремент).
- * При INSERT мы id не передаём, а читаем сгенерированный через getGeneratedKeys().
- */
+//   SampleRepository - все SQL-операции с таблицей samples
+//   id генерирует PostgreSQL (BIGSERIAL = автоинкремент)
+//   При INSERT мы id не передаём, а читаем сгенерированный через getGeneratedKeys()
+
 public class SampleRepository {
 
-    /**
-     * Сохранить новый образец в БД.
-     * Возвращает тот же образец но уже с реальным id от PostgreSQL.
-     */
+//     Сохранить новый образец в БД
+//     Возвращает тот же образец но уже с реальным id от PostgreSQL
+
     public Sample save(Sample sample) {
-        // id не указываем — PostgreSQL сам назначит следующий по порядку
+
+        // id не указываем - PostgreSQL сам назначит следующий по порядку
+
+        //Знаки вопроса превращают любые введенные пользователем символы в
+        //обычный безобидный текст (строку) и не дают базе данных запустить
+        //этот текст как команду
+
         String sql = "INSERT INTO samples (name, type, location, status, owner_login) " +
                 "VALUES (?, ?, ?, ?, ?)";
 
-        // RETURN_GENERATED_KEYS — флаг: после INSERT верни сгенерированный id
+        // RETURN_GENERATED_KEYS - флаг: после INSERT верни сгенерированный id
+
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -73,10 +77,10 @@ public class SampleRepository {
         }
     }
 
-    /**
-     * Обновить существующий образец в БД.
-     * UPDATE находит строку по id и меняет поля.
-     */
+
+//     Обновить существующий образец в БД.
+//     UPDATE находит строку по id и меняет поля
+
     public void update(Sample sample) {
         String sql = "UPDATE samples SET name=?, type=?, location=?, status=?, " +
                 "updated_at=NOW() WHERE id=?";
@@ -100,9 +104,6 @@ public class SampleRepository {
         }
     }
 
-    /**
-     * Найти образец по id. Возвращает null если не найден.
-     */
     public Sample findById(long id) {
         String sql = "SELECT * FROM samples WHERE id=?";
 
@@ -125,10 +126,6 @@ public class SampleRepository {
         }
     }
 
-    /**
-     * Получить все образцы из таблицы.
-     * ORDER BY id — порядок предсказуемый.
-     */
     public List<Sample> findAll() {
         String sql = "SELECT * FROM samples ORDER BY id";
         List<Sample> result = new ArrayList<>();
@@ -137,7 +134,7 @@ public class SampleRepository {
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
 
-            // while rs.next() — обходим все строки результата
+            // while rs.next() - обходим все строки результата
             while (rs.next()) {
                 result.add(mapRow(rs));
             }
@@ -149,9 +146,6 @@ public class SampleRepository {
         return result;
     }
 
-    /**
-     * Образцы по статусу (для фильтра --status в CLI).
-     */
     public List<Sample> findByStatus(SampleStatus status) {
         String sql = "SELECT * FROM samples WHERE status=? ORDER BY id";
         List<Sample> result = new ArrayList<>();
@@ -174,9 +168,6 @@ public class SampleRepository {
         return result;
     }
 
-    /**
-     * Удалить образец. CASCADE в схеме удалит и все его измерения автоматически.
-     */
     public void delete(long id) {
         String sql = "DELETE FROM samples WHERE id=?";
 
@@ -194,14 +185,12 @@ public class SampleRepository {
         }
     }
 
-    /**
-     * mapRow — одна строка ResultSet → объект Sample.
-     * Вынесен отдельно чтобы не дублировать код в findById и findAll.
-     *
-     * rs.getLong("id")     — читает колонку id как long
-     * rs.getString("name") — читает колонку name как String
-     * rs.getTimestamp(...) — читает TIMESTAMPTZ → конвертируем в Java Instant
-     */
+//     mapRow - одна строка ResultSet это объект Sample
+//     Вынесен отдельно чтобы не дублировать код в findById и findAll
+//     rs.getLong("id") - читает колонку id как long
+//     rs.getString("name") - читает колонку name как String
+//     rs.getTimestamp() - Timestamp конвертируем в Java Instant
+
     private Sample mapRow(ResultSet rs) throws SQLException {
         // "ACTIVE" → SampleStatus.ACTIVE
         SampleStatus status = SampleStatus.valueOf(rs.getString("status"));

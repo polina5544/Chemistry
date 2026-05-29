@@ -5,21 +5,18 @@ import domain.User;
 
 import java.util.Collection;
 
-/**
- * UserService — бизнес-логика пользователей.
- *
- * Всё хранится в PostgreSQL через UserRepository.
- * Никакого HashMap в памяти больше нет.
- */
+
+// UserService - бизнес-логика пользователей
+// Всё хранится в PostgreSQL через UserRepository
+
 public class UserService {
 
     private final UserRepository repo = new UserRepository();
 
-    /**
-     * Зарегистрировать нового пользователя.
-     * Проверяет уникальность через SELECT COUNT в БД.
-     * Пароль хешируется в конструкторе User (SHA-256).
-     */
+//     Зарегистрировать нового пользователя
+//     Проверяет уникальность через SELECT COUNT в БД
+//     Пароль хешируется в конструкторе User (SHA-256)
+
     public User register(String login, String rawPassword) {
         if (login == null || login.isBlank()) {
             throw new IllegalArgumentException("Ошибка: логин не может быть пустым");
@@ -45,10 +42,9 @@ public class UserService {
         return user;
     }
 
-    /**
-     * Войти в систему: проверить логин и пароль.
-     * Читаем хеш из БД и сравниваем с хешем введённого пароля.
-     */
+//     Войти в систему: проверить логин и пароль
+//     Читаем хеш из БД и сравниваем с хешем введённого пароля
+
     public User authenticate(String login, String rawPassword) {
         if (login == null || login.isBlank()) {
             throw new IllegalArgumentException("Ошибка: введите логин");
@@ -57,7 +53,6 @@ public class UserService {
         // SELECT из БД по логину
         User user = repo.findByLogin(login.toLowerCase());
 
-        // Одинаковое сообщение для "нет логина" и "неверный пароль" — базовая безопасность
         if (user == null || !user.checkPassword(rawPassword)) {
             throw new IllegalArgumentException("Ошибка: неверный логин или пароль");
         }
@@ -65,21 +60,9 @@ public class UserService {
         return user;
     }
 
-    /**
-     * Все пользователи из БД.
-     */
+
     public Collection<User> getAll() {
         return repo.findAll();
     }
 
-    /**
-     * Оставлен для совместимости — данные теперь в БД.
-     */
-    public void setUsers(Collection<User> ignored) {
-        // Ничего не делаем
-    }
-
-    public boolean isEmpty() {
-        return repo.findAll().isEmpty();
-    }
 }
