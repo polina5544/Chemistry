@@ -43,13 +43,13 @@ public class MainApp extends Application {
         MainController controller = new MainController(userSession);
         Scene scene = new Scene(controller.getView(), 900, 540);
 
-        stage.setTitle("⚗️ Лабораторные образцы — " + userSession.getCurrentLogin());
+        stage.setTitle("Лабораторные образцы — " + userSession.getCurrentLogin());
         stage.setScene(scene);
         stage.show();
     }
 
     public static void main(String[] args) {
         if (args.length > 0) filePath = args[0];
-        launch();
+        launch(args);
     }
 }
