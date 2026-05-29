@@ -34,7 +34,7 @@ public class UserSession {
         return currentUser != null;
     }
 
-    // Получить текущего пользователя.
+    // Получить текущего пользователя
 
     public User getCurrentUser() {
         return currentUser;

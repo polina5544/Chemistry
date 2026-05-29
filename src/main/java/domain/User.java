@@ -32,9 +32,9 @@ public class User {
 //     Если использовать 1 конструктор при чтении файла то будет повторное
 //     хеширование и пользователь НИКОГДА  не сможет зайти
 //     Используется в xmlUserStorage при чтении данных чтобы не хешировать повторно
-//     @param login        логин
-//     @param passwordHash готовый SHA-256 хеш (hex-строка)
-//     @param alreadyHashed флаг-заглушка чтобы отличить этот конструктор от первого!!
+//     login - логин
+//     passwordHash - готовый SHA-256 хеш (hex-строка)
+//     alreadyHashed - флаг-заглушка чтобы отличить этот конструктор от первого!!
 //
     public User(String login, String passwordHash, boolean alreadyHashed) {
         this.login = login;

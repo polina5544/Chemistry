@@ -8,15 +8,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * MeasurementRepository — операции с таблицей measurements.
- */
 public class MeasurementRepository {
 
-    /**
-     * Сохранить новое измерение.
-     * id генерируется БД автоматически (BIGSERIAL).
-     */
+//     Сохранить новое измерение.
+//     id генерируется БД автоматически (BIGSERIAL)
+
     public Measurement save(Measurement m) {
         String sql = """
                 INSERT INTO measurements
@@ -28,17 +24,20 @@ public class MeasurementRepository {
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             stmt.setLong(1, m.getSampleId());
-            stmt.setString(2, m.getParam().name()); // enum → строка: "PH", "TURBIDITY" и т.д.
+            stmt.setString(2, m.getParam().name()); // enum - строка: "PH", "TURBIDITY" и тд
             stmt.setDouble(3, m.getValue());
             stmt.setString(4, m.getUnit());
             stmt.setString(5, m.getMethod());
-            // setTimestamp: конвертируем Java Instant → SQL Timestamp
+
+            // setTimestamp: конвертируем Java Instant потом SQL - Timestamp
+
             stmt.setTimestamp(6, Timestamp.from(m.getMeasuredAt()));
             stmt.setString(7, m.getOwnerUsername());
 
             stmt.executeUpdate();
 
             // Читаем сгенерированный id
+
             try (ResultSet keys = stmt.getGeneratedKeys()) {
                 if (keys.next()) {
                     long genId = keys.getLong(1);
@@ -63,12 +62,12 @@ public class MeasurementRepository {
         }
     }
 
-    /**
-     * Получить все измерения для конкретного образца.
-     * Используется в MeasurementListCommand.
-     */
+
+//     Получить все измерения для конкретного образца
+//     Используется в MeasurementListCommand
+
     public List<Measurement> findBySampleId(long sampleId) {
-        // ORDER BY measured_at DESC — сначала самые новые
+        // ORDER BY measured_at DESC - сначала самые новые
         String sql = """
                 SELECT * FROM measurements
                 WHERE sample_id = ?
@@ -94,10 +93,10 @@ public class MeasurementRepository {
         return result;
     }
 
-    /**
-     * Получить измерения образца по конкретному параметру.
-     * Используется в MeasurementStatsCommand и MeasurementListCommand с --param.
-     */
+
+//      Получить измерения образца по конкретному параметру
+//      Используется в MeasurementStatsCommand и MeasurementListCommand с --param
+
     public List<Measurement> findBySampleIdAndParam(long sampleId, MeasurementParam param) {
         String sql = """
                 SELECT * FROM measurements
@@ -110,7 +109,7 @@ public class MeasurementRepository {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setLong(1, sampleId);
-            stmt.setString(2, param.name()); // enum → строка
+            stmt.setString(2, param.name()); // enum в строку
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -125,10 +124,10 @@ public class MeasurementRepository {
         return result;
     }
 
-    /**
-     * Получить ВСЕ измерения (нужно для совместимости с Set<Measurement> в сервисах).
-     * Используется при инициализации приложения.
-     */
+
+//     Получить ВСЕ измерения (нужно для совместимости с Set<Measurement> в сервисах)
+//     Используется при инициализации приложения
+
     public List<Measurement> findAll() {
         String sql = "SELECT * FROM measurements ORDER BY id";
         List<Measurement> result = new ArrayList<>();
@@ -148,11 +147,12 @@ public class MeasurementRepository {
         return result;
     }
 
-    /**
-     * mapRow — одна строка ResultSet → объект Measurement.
-     */
+//    mapRow - одна строка ResultSet это объект Measurement
+
     private Measurement mapRow(ResultSet rs) throws SQLException {
-        // valueOf(строка) → enum. Строка "PH" → MeasurementParam.PH
+
+        // превращает строку из базы данных в объект Java
+
         MeasurementParam param = MeasurementParam.valueOf(rs.getString("param"));
 
         Timestamp measuredAt = rs.getTimestamp("measured_at");
