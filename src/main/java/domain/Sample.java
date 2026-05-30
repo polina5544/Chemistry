@@ -29,6 +29,7 @@ public class Sample {
         this.type = type;
         this.location = location;
         this.status = status;
+        this.ownerUsername = ownerUsername;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
 

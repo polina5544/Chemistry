@@ -14,36 +14,38 @@ import domain.User;
 
 public class UserSession {
 
-    private User currentUser = null; // null = никто не вошёл
-    private String currentLogin;
-    // Войти в систему - запомнить пользователя как текущего
+    private User currentUser = null;  // хранит объект пользователя
 
+    // Войти в систему
     public void login(User user) {
         this.currentUser = user;
+        System.out.println("Установлен пользователь: " + user.getLogin());
     }
 
-    // Выйти из системы значит забыть текущего пользователя
-
+    // Выйти из системы
     public void logout() {
         this.currentUser = null;
+        System.out.println("UserSession: logout()");
     }
 
-     // Проверить авторизован ли кто-то сейчас
-
+    // Проверить, авторизован ли кто-то
     public boolean isLoggedIn() {
         return currentUser != null;
     }
 
-    // Получить текущего пользователя
-
+    // Получить текущего пользователя (объект)
     public User getCurrentUser() {
         return currentUser;
     }
 
-    // Получить логин текущего пользователя для записи в owner
-    // Если никто не вошёл - возвращает unknown
-
+    // Получить ЛОГИН текущего пользователя
     public String getCurrentLogin() {
-        return currentUser != null ? currentUser.getLogin() : "unknown";
+        if (currentUser == null) {
+            System.out.println("пользователь не вошёл)");
+            return null;
+        }
+        String login = currentUser.getLogin();
+        System.out.println("UserSession: getCurrentLogin() = " + login);
+        return login;
     }
 }
