@@ -15,7 +15,7 @@ import domain.User;
 public class UserSession {
 
     private User currentUser = null; // null = никто не вошёл
-
+    private String currentLogin;
     // Войти в систему - запомнить пользователя как текущего
 
     public void login(User user) {

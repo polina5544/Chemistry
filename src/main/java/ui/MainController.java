@@ -12,12 +12,18 @@ import javafx.scene.layout.*;
 import service.SampleService;
 import service.UserSession;
 
-
-
-//Кнопки:
-//Refresh — перечитать образцы из БД
-//Add     — диалог создания нового образца (owner = текущий пользователь)
-//Delete  — удалить выбранный образец из БД
+/**
+ * MainController — главное окно приложения.
+ *
+ * Источник данных — PostgreSQL через SampleService → SampleRepository.
+ * Никакого XML, никакого StorageService здесь нет.
+ *
+ * Кнопки:
+ *   Refresh — перечитать образцы из БД
+ *   Add     — диалог создания нового образца (owner = текущий пользователь)
+ *   Delete  — удалить выбранный образец из БД
+ *   Save    — не нужна (данные сохраняются в БД сразу при Add)
+ */
 
 public class MainController {
 
@@ -25,9 +31,7 @@ public class MainController {
     private final SampleService sampleService = new SampleService();
     private final UserSession userSession;
 
-    //  особый список JavaFX. Когда в него добавляешь или удаляешь элементы,
-    //  таблица автоматически перерисовывается
-    // FXCollections.observableArrayList()- фабричный метод, создаёт пустой такой список
+    // ObservableList — список который автоматически обновляет таблицу при изменении
     private final ObservableList<Sample> data = FXCollections.observableArrayList();
     private final TableView<Sample> table = new TableView<>();
     private final Label details = new Label("Выберите образец из списка");
@@ -40,6 +44,9 @@ public class MainController {
 
     public MainController(UserSession userSession) {
         this.userSession = userSession;
+        // При старте запускаем кеш
+        sampleService.init();
+
         setupTable();
         setupButtons();
         setupLayout();
@@ -47,15 +54,29 @@ public class MainController {
         // При старте загружаем все образцы из БД
         refreshFromDb();
     }
+
     // Загрузка из БД
-    // Читает все образцы из PostgreSQL и обновляет таблицу
-    // Вызывается при старте и при нажатии Refresh
+
+    /**
+     * Читает все образцы из PostgreSQL и обновляет таблицу.
+     * Вызывается при старте и при нажатии Refresh.
+     */
+
     private void refreshFromDb() {
         try {
-            // sampleService.getAll() потом repo.findAll() и в бд  SELECT * FROM samples
-                data.setAll(sampleService.getAll());
-            } catch (Exception e) {
-                showError("Ошибка загрузки из БД: " + e.getMessage());
+            var all = sampleService.getAll();
+            System.out.println(
+                    "FROM DB = " + all.size()
+            );
+            for (var s : all) {
+                System.out.println(
+                        s.getId() + " "
+                                + s.getName()
+                );
+            }
+            data.setAll(all);
+        } catch (Exception e) {
+            showError(e.getMessage());
         }
     }
 
@@ -67,31 +88,28 @@ public class MainController {
                 makeCol("Name",     200, Sample::getName),
                 makeCol("Type",     120, Sample::getType),
                 makeCol("Location", 140, Sample::getLocation),
-
-                // метод name возвращает название константы как тест
                 makeCol("Status",   100, s -> s.getStatus().name()),
-                makeCol("Owner",    120, s -> s.getOwnerUsername() != null
+                makeCol("Owner",    200, s -> s.getOwnerUsername() != null
                         ? s.getOwnerUsername() : "—")
         );
 
         // Подключаем список данных к таблице
         table.setItems(data);
-        //устанавливает заглушку - визуальный элемент, который будет
-        //виден на экране, если таблица окажется пустой
         table.setPlaceholder(new Label("Нет образцов. Нажми Add!"));
 
-        // При клике на строку - показываем детали справа
-        // .getSelectionModel() - запрашивает у таблицы специальную модель,
-        // которая управляет выделением строк (знает, какая строка сейчас активна)
-        // selectedItemProperty() - обращается к конкретному свойству (наблюдаемому объекту),
-        // которое хранит текущий выделенный элемент
-        // При клике на строку модель заглядывает в  список данных
-        // data под соответствующим индексом.
-        // Она берет оттуда полноценный Java-объект со всеми его скрытыми полями
-        //  и помещает его в свойство selectedItemProperty
-
+        // При клике на строку — показываем детали справа и обновляем кнопку Delete
         table.getSelectionModel().selectedItemProperty().addListener(
-                (obs, old, selected) -> showDetails(selected));
+                (obs, old, selected) -> {
+                    showDetails(selected);
+                    // Кнопка Delete активна только если выбран образец И пользователь — владелец
+                    if (selected == null) {
+                        deleteBtn.setDisable(true);
+                    } else {
+                        boolean isOwner = selected.getOwnerUsername() != null &&
+                                selected.getOwnerUsername().equals(userSession.getCurrentLogin());
+                        deleteBtn.setDisable(!isOwner);
+                    }
+                });
 
         // Чередование розовых строк
         table.setRowFactory(tv -> {
@@ -109,29 +127,22 @@ public class MainController {
         });
     }
 
-    //java.util.function.Function - встроенный интерфейс Java
-    // 1. даю целый объект 2. вытаскиваю из него определенную строку
-    // 3. отдаю таблице и оно станет ячейкой
-
-    //setCellValueFactory - метод, который определяет, откуда
-    // ячейки этой колонки будут брать текст
-
+    /**
+     * Создать столбец таблицы.
+     * extractor — функция которая достаёт нужное поле из объекта Sample.
+     */
     private TableColumn<Sample, String> makeCol(String title, double width,
-            java.util.function.Function<Sample, String> extractor) {
-
+                                                java.util.function.Function<Sample, String> extractor) {
         TableColumn<Sample, String> col = new TableColumn<>(title);
-
-        // cd - информация по текущей строке(CellDataFeatures)
-        // SimpleStringProperty - специальная JavaFX-обертка для строк,
-        // которая нужна таблице для отслеживания изменений
-
+        // setCellValueFactory говорит колонке: "для каждой строки вызови extractor"
         col.setCellValueFactory(cd -> new SimpleStringProperty(extractor.apply(cd.getValue())));
         col.setPrefWidth(width);
         return col;
     }
 
-
-    // Показать детали выбранного образца в правой панели
+    /**
+     * Показать детали выбранного образца в правой панели.
+     */
     private void showDetails(Sample s) {
         if (s == null) {
             details.setText("Выберите образец из списка");
@@ -147,10 +158,11 @@ public class MainController {
         );
     }
 
-    //Кнопки
+    // Кнопки
+
     private void setupButtons() {
 
-        // Refresh - перечитать из БД
+        // Refresh — перечитать из БД
         refreshBtn.setOnAction(e -> {
             refreshFromDb();
             showInfo("Данные обновлены из БД");
@@ -162,25 +174,12 @@ public class MainController {
             dialog.setTitle("Новый образец");
             dialog.setHeaderText("Создаёт: " + userSession.getCurrentLogin());
 
-            //ButtonBar.ButtonData.OK_DONE - это специальный маркер (роль кнопки)
-            // Он объясняет операционной системе, что эта кнопка является
-            // главной (подтверждающей)
-
-            //ButtonType.CANCEL
-            // Это готовая кнопка JavaFX, на которой автоматически будет
-            // написано «Отмена». Она также автоматически закрывает окно при нажатии на Esc
-
             ButtonType okType = new ButtonType("Добавить", ButtonBar.ButtonData.OK_DONE);
             dialog.getDialogPane().getButtonTypes().addAll(okType, ButtonType.CANCEL);
 
             TextField nameField     = styledField("Например: Речная вода");
             TextField typeField     = styledField("Например: water");
-            TextField locationField = styledField("Например: Лаб. 204");
-
-            // Настройка выпадающего списка для Active/Archived
-            // ComboBox - это встроенный элемент интерфейса (выпадающее меню)
-            // getItems() - запрашивает у списка его внутренний перечень элементов
-            // addAll() - добавляет элементы в этот перечень
+            TextField locationField = styledField("Например: лаба в аквариуме");
 
             ComboBox<SampleStatus> statusBox = new ComboBox<>();
             statusBox.getItems().addAll(SampleStatus.values());
@@ -200,11 +199,6 @@ public class MainController {
             dialog.getDialogPane().setContent(grid);
 
             // Кнопка OK активна только если все поля заполнены
-            // lookupButton(okType) - находит физическую кнопку на панели окна
-            // по её описанию okType (которую мы создали ранее).
-            // Она возвращается как базовый элемент интерфейса - Node
-            // setDisable(true) — сразу же блокирует эту кнопку
-
             javafx.scene.Node okNode = dialog.getDialogPane().lookupButton(okType);
             okNode.setDisable(true);
             Runnable check = () -> okNode.setDisable(
@@ -217,8 +211,6 @@ public class MainController {
 
             // Собираем объект Sample из полей диалога
             // id = 0 — заглушка, настоящий id придёт из PostgreSQL
-            //setResultConverter - этот метод переводит нажатие кнопки в полноценный объект данных
-            // Если нажата кнопка okType то создается и возвращается новый объект new Sample()
             dialog.setResultConverter(btn -> btn == okType
                     ? new Sample(0L,
                     nameField.getText().trim(),
@@ -230,23 +222,27 @@ public class MainController {
                     java.time.Instant.now())
                     : null);
 
-            // ifPresent - проверяет появился ли у нас готовый объект с данными
-
             dialog.showAndWait().ifPresent(sample -> {
                 try {
                     sampleService.addSample(sample);
                     // перечитать реальные данные из PostgreSQL
                     refreshFromDb();
+
                 } catch (Exception ex) {
                     showError("Ошибка добавления: " + ex.getMessage());
                 }
             });
         });
 
+        // Delete — удалить выбранный образец
         deleteBtn.setOnAction(e -> {
             Sample selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) {
                 showError("Выберите образец в таблице");
+                return;
+            }
+            if (!selected.getOwnerUsername().equals(userSession.getCurrentLogin())) {
+                showError("У Вас нет прав владельца, необходимых для удаления этого образца");
                 return;
             }
             new Alert(Alert.AlertType.CONFIRMATION,
@@ -255,22 +251,21 @@ public class MainController {
                     .showAndWait().ifPresent(btn -> {
                         if (btn == ButtonType.OK) {
                             try {
-                                // DELETE FROM samples WHERE id = чему то
+                                // DELETE FROM samples WHERE id = ?
                                 sampleService.deleteSample(selected.getId());
-
                                 refreshFromDb();
-
-                                // Очистка панели деталей справа
                                 details.setText("Выберите образец из списка");
                             } catch (Exception ex) {
                                 showError("Ошибка удаления: " + ex.getMessage());
                             }
                         }
+                        deleteBtn.setDisable(true);  // изначально кнопка Delete неактивна
                     });
         });
     }
 
-    //Layout
+    // Layout
+
     private void setupLayout() {
         // Панель деталей справа
         VBox right = new VBox(10, pinkLabel("─── Детали ───"), details);
@@ -281,7 +276,7 @@ public class MainController {
         details.setStyle("-fx-font-size:13px; -fx-text-fill:#8B4A62; -fx-font-family:Georgia;");
         details.setWrapText(true);
 
-        // Кнопки снизу (Save убрана - данные сохраняются сразу в БД)
+        // Кнопки снизу (Save убрана — данные сохраняются сразу в БД)
         HBox buttons = new HBox(10, refreshBtn, addBtn, deleteBtn);
         buttons.setPadding(new Insets(10));
         buttons.setStyle("-fx-background-color:#FFE4EC; " +
@@ -300,7 +295,8 @@ public class MainController {
         root.setBottom(buttons);
     }
 
-    // Вспомогательные
+    // Вспомогательные методы
+
     private static TextField styledField(String prompt) {
         TextField tf = new TextField();
         tf.setPromptText(prompt);

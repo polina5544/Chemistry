@@ -194,7 +194,6 @@ public class LoginDialog {
     }
 
     // Вспомогательные методы
-
     private TextField styledField(String prompt) {
         TextField tf = new TextField();
         tf.setPromptText(prompt);

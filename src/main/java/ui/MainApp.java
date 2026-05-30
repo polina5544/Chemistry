@@ -38,7 +38,7 @@ public class MainApp extends Application {
         // 2: открываем главное окно
         // MainController получает userSession чтобы знать кто вошёл (для owner)
         MainController controller = new MainController(userSession);
-        Scene scene = new Scene(controller.getView(), 900, 540);
+        Scene scene = new Scene(controller.getView(), 1100, 600);
 
         stage.setTitle("Лабораторные образцы - " + userSession.getCurrentLogin());
         stage.setScene(scene);

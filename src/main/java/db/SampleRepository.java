@@ -33,7 +33,7 @@ public class SampleRepository {
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            // Подставляем значения вместо ? (индексы с 1, не с 0!)
+            // Подставляем значения вместо ?
             stmt.setString(1, sample.getName());
             stmt.setString(2, sample.getType());
             stmt.setString(3, sample.getLocation());
@@ -42,6 +42,7 @@ public class SampleRepository {
 
             // executeUpdate() выполняет INSERT и возвращает кол-во затронутых строк
             int affected = stmt.executeUpdate();
+            stmt.executeUpdate();
 
             if (affected == 0) {
                 throw new RuntimeException("INSERT не добавил ни одной строки");
