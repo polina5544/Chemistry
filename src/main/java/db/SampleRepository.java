@@ -42,7 +42,7 @@ public class SampleRepository {
 
             // executeUpdate() выполняет INSERT и возвращает кол-во затронутых строк
             int affected = stmt.executeUpdate();
-            stmt.executeUpdate();
+
 
             if (affected == 0) {
                 throw new RuntimeException("INSERT не добавил ни одной строки");
