@@ -2,7 +2,7 @@ package validation;
 
 import domain.Measurement;
 
-public class MeasurmentValidation {
+public class MeasurementValidation {
 
     public static void validate(Measurement m) {
 

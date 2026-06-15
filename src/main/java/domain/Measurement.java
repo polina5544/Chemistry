@@ -18,17 +18,24 @@ public class Measurement {
     private Instant createdAt;
     private Instant updatedAt;
 
-    public Measurement(long id,
-                       long sampleId,
-                       MeasurementParam param,
-                       double value,
-                       String unit,
-                       String method,
-                       Instant measuredAt,
-                       String ownerUsername,
-                       Instant createdAt,
-                       Instant updatedAt) {
+    // Конструктор для создания нового измерения (без id)
+    public Measurement(long sampleId, MeasurementParam param, double value,
+                       String unit, String method, Instant measuredAt, String ownerUsername) {
+        this.sampleId = sampleId;
+        this.param = param;
+        this.value = value;
+        this.unit = unit;
+        this.method = method;
+        this.measuredAt = measuredAt;
+        this.ownerUsername = ownerUsername;
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
+    }
 
+    // Конструктор для загрузки из БД
+    public Measurement(long id, long sampleId, MeasurementParam param, double value,
+                       String unit, String method, Instant measuredAt, String ownerUsername,
+                       Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.sampleId = sampleId;
         this.param = param;

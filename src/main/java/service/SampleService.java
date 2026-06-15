@@ -1,6 +1,8 @@
 package service;
 
+import db.MeasurementRepository;
 import db.SampleRepository;
+import domain.Measurement;
 import domain.Sample;
 import domain.SampleStatus;
 import validation.SampleValidation;
@@ -19,6 +21,7 @@ public class SampleService {
     // Единственное хранилище - PostgreSQL через репозиторий
     private final SampleRepository repo = new SampleRepository();
     private final SampleCache cache = new SampleCache();
+    private final MeasurementRepository measurementRepository = new MeasurementRepository();
 
 //     Создать новый образец через CLI (sample_add)
 //     Валидируем поля потом сохраняем в БД потом возвращаем с id от БД
@@ -78,6 +81,13 @@ public class SampleService {
         // прост удаляется из БД
         repo.delete(id);
         cache.remove(id);
+    }
+
+    public void updateSample(Sample sample) {
+    }
+
+    public void addMeasurement(Measurement measurement) {
+        measurementRepository.save(measurement);
     }
 
     public void refresh() {

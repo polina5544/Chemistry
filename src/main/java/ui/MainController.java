@@ -30,7 +30,6 @@ import service.UserSession;
 //MainController - главное окно приложения
 //Источник данных - PostgreSQL через SampleService потом SampleRepository
 
-
 public class MainController {
 
     // SampleService - единственный путь к данным
@@ -54,6 +53,7 @@ public class MainController {
     private final Button refreshBtn = new Button("Refresh");
     private final Button addBtn = new Button("Add");
     private final Button deleteBtn = new Button("Delete");
+    private final Button editBtn = new Button("Edit");
 
     private final BorderPane root = new BorderPane();
 
@@ -140,8 +140,8 @@ public class MainController {
     }
 
 
-     // Читает все образцы из PostgreSQL и обновляет таблицу
-     // Вызывается при старте приложения и при нажатии Refresh
+    // Читает все образцы из PostgreSQL и обновляет таблицу
+    // Вызывается при старте приложения и при нажатии Refresh
 
     private void refreshFromDb() {
         try {
@@ -159,8 +159,8 @@ public class MainController {
     }
 
 
-     // Настраивает таблицу: создаёт столбцы и подключает список data
-     // обрабатывает выбор строки и задаёт оформление строк
+    // Настраивает таблицу: создаёт столбцы и подключает список data
+    // обрабатывает выбор строки и задаёт оформление строк
 
     private void setupTable() {
         table.getColumns().add(makeCol("ID", 60, s -> String.valueOf(s.getId())));
@@ -246,7 +246,7 @@ public class MainController {
         return col;
     }
 
-     // Показывает детали выбранного образца в колбе прямо
+    // Показывает детали выбранного образца в колбе прямо
     private void showDetails(Sample s) {
         if (s == null) {
             details.setText("Выберите образец из списка");
@@ -265,7 +265,6 @@ public class MainController {
 
         updateVisualization(s);
     }
-
 
     private void setupButtons() {
         // Refresh — перечитать данные из БД.
@@ -355,7 +354,6 @@ public class MainController {
             });
         });
 
-
         deleteBtn.setOnAction(e -> {
             Sample selected = table.getSelectionModel().getSelectedItem();
 
@@ -396,11 +394,230 @@ public class MainController {
         });
 
         deleteBtn.setDisable(true);
+
+        editBtn.setOnAction(e -> {
+            Sample selected = table.getSelectionModel().getSelectedItem();
+
+            if (selected == null) {
+                showError("Выберите образец");
+                return;
+            }
+            showEditDialog(selected);
+        });
+
+        editBtn.setDisable(true);
+
+        table.getSelectionModel().selectedItemProperty().addListener(
+                (obs, old, selected) -> {
+                    showDetails(selected);
+
+                    if (selected != null) {
+                        for (int i = 0; i < 12; i++) {
+                            createFlyingBubble();
+                        }
+                    }
+
+                    if (selected == null) {
+                        deleteBtn.setDisable(true);
+                        editBtn.setDisable(true);
+                    } else {
+                        boolean isOwner = selected.getOwnerUsername() != null &&
+                                selected.getOwnerUsername().equals(userSession.getCurrentLogin());
+                        deleteBtn.setDisable(!isOwner);
+                        editBtn.setDisable(false);
+                    }
+                });
     }
 
-     // Настраивает визуальное представление образца
-     // Здесь создаётся колба:
-     // В JavaFX элементы, добавленные позже, рисуются выше остальных!
+    private void showEditDialog(Sample sample) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Редактирование образца: " + sample.getName());
+        dialog.setHeaderText("Выберите действие");
+
+        ButtonType editSampleBtn = new ButtonType("Изменить образец");
+        ButtonType addMeasurementBtn = new ButtonType("Добавить измерение");
+        ButtonType cancelBtn = new ButtonType("Отмена", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        dialog.getDialogPane().getButtonTypes().addAll(editSampleBtn, addMeasurementBtn, cancelBtn);
+
+        // красота
+        dialog.getDialogPane().lookupButton(editSampleBtn).setStyle(
+                "-fx-background-color: #d63384; -fx-text-fill: white; -fx-font-weight: bold;"
+        );
+        dialog.getDialogPane().lookupButton(addMeasurementBtn).setStyle(
+                "-fx-background-color: #f48fb1; -fx-text-fill: #880e4f; -fx-font-weight: bold;"
+        );
+
+        dialog.setResultConverter(btn -> {
+            if (btn == editSampleBtn) {
+                showEditSampleDialog(sample);
+            } else if (btn == addMeasurementBtn) {
+                showAddMeasurementDialog(sample);
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
+    }
+
+    private void showEditSampleDialog(Sample sample) {
+        // чекаем права на изменение образца
+        if (sample.getOwnerUsername() == null ||
+                !sample.getOwnerUsername().equals(userSession.getCurrentLogin())) {
+            showError("Только владелец может редактировать образец");
+            return;
+        }
+
+        Dialog<Sample> dialog = new Dialog<>();
+        dialog.setTitle("Редактирование образца");
+        dialog.setHeaderText("Редактирует: " + userSession.getCurrentLogin());
+
+        ButtonType saveType = new ButtonType("Сохранить", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveType, ButtonType.CANCEL);
+
+        TextField nameField = styledField(sample.getName());
+        TextField typeField = styledField(sample.getType());
+        TextField locationField = styledField(sample.getLocation());
+        ComboBox<SampleStatus> statusBox = new ComboBox<>();
+        statusBox.getItems().addAll(SampleStatus.values());
+        statusBox.setValue(sample.getStatus());
+
+        GridPane grid = new GridPane();
+        grid.setHgap(12);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(16));
+
+        grid.add(pinkLabel("Name:"), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(pinkLabel("Type:"), 0, 1);
+        grid.add(typeField, 1, 1);
+        grid.add(pinkLabel("Location:"), 0, 2);
+        grid.add(locationField, 1, 2);
+        grid.add(pinkLabel("Status:"), 0, 3);
+        grid.add(statusBox, 1, 3);
+        grid.add(pinkLabel("Owner:"), 0, 4);
+        grid.add(new Label(userSession.getCurrentLogin()), 1, 4);
+
+        dialog.getDialogPane().setContent(grid);
+
+        javafx.scene.Node saveNode = dialog.getDialogPane().lookupButton(saveType);
+        saveNode.setDisable(true);
+
+        Runnable check = () -> saveNode.setDisable(
+                nameField.getText().isBlank() ||
+                        typeField.getText().isBlank() ||
+                        locationField.getText().isBlank()
+        );
+
+        nameField.textProperty().addListener((o, a, b) -> check.run());
+        typeField.textProperty().addListener((o, a, b) -> check.run());
+        locationField.textProperty().addListener((o, a, b) -> check.run());
+
+        dialog.setResultConverter(btn -> btn == saveType ? new Sample(
+                sample.getId(),
+                nameField.getText().trim(),
+                typeField.getText().trim(),
+                locationField.getText().trim(),
+                statusBox.getValue(),
+                userSession.getCurrentLogin(),
+                sample.getCreatedAt(),
+                java.time.Instant.now()
+        ) : null);
+
+        dialog.showAndWait().ifPresent(updatedSample -> {
+            try {
+                sampleService.updateSample(updatedSample);
+                refreshFromDb();
+                showInfo("Образец обновлён");
+            } catch (Exception ex) {
+                showError("Ошибка обновления: " + ex.getMessage());
+            }
+        });
+    }
+    private void showAddMeasurementDialog(Sample sample) {
+        Dialog<Measurement> dialog = new Dialog<>();
+        dialog.setTitle("Добавление измерения");
+        dialog.setHeaderText("Образец: " + sample.getName());
+
+        ButtonType addType = new ButtonType("Добавить", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addType, ButtonType.CANCEL);
+
+        ComboBox<MeasurementParam> paramBox = new ComboBox<>();
+        paramBox.getItems().addAll(MeasurementParam.values());
+        paramBox.setPromptText("Выберите параметр");
+
+        TextField valueField = styledField("Значение (число)");
+
+        TextField unitField = styledField("Единицы измерения (например, °C)");
+
+        TextField methodField = styledField("Метод измерения");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(12);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(16));
+
+        grid.add(pinkLabel("Параметр:"), 0, 0);
+        grid.add(paramBox, 1, 0);
+        grid.add(pinkLabel("Значение:"), 0, 1);
+        grid.add(valueField, 1, 1);
+        grid.add(pinkLabel("Единицы:"), 0, 2);
+        grid.add(unitField, 1, 2);
+        grid.add(pinkLabel("Метод:"), 0, 3);
+        grid.add(methodField, 1, 3);
+
+        dialog.getDialogPane().setContent(grid);
+
+        javafx.scene.Node addNode = dialog.getDialogPane().lookupButton(addType);
+        addNode.setDisable(true);
+
+        Runnable check = () -> addNode.setDisable(
+                paramBox.getValue() == null ||
+                        valueField.getText().isBlank() ||
+                        unitField.getText().isBlank() ||
+                        methodField.getText().isBlank()
+        );
+
+        paramBox.valueProperty().addListener((o, a, b) -> check.run());
+        valueField.textProperty().addListener((o, a, b) -> check.run());
+        unitField.textProperty().addListener((o, a, b) -> check.run());
+        methodField.textProperty().addListener((o, a, b) -> check.run());
+
+        dialog.setResultConverter(btn -> {
+            if (btn == addType) {
+                try {
+                    double value = Double.parseDouble(valueField.getText().trim());
+                    Measurement measurement = new Measurement(
+                            sample.getId(), // sampleId
+                            paramBox.getValue(),
+                            value,
+                            unitField.getText().trim(),
+                            methodField.getText().trim(),
+                            java.time.Instant.now(),
+                            userSession.getCurrentLogin()
+                    );
+                    return measurement;
+                } catch (NumberFormatException e) {
+                    showError("Значение должно быть числом");
+                    return null;
+                }
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(measurement -> {
+            try {
+                sampleService.addMeasurement(measurement);
+                showInfo("Измерение добавлено");
+            } catch (Exception ex) {
+                showError("Ошибка добавления измерения: " + ex.getMessage());
+            }
+        });
+    }
+
+    // Настраивает визуальное представление образца
+    // Здесь создаётся колба:
+    // В JavaFX элементы, добавленные позже, рисуются выше остальных!
 
     private void setupVisualization() {
         // flaskGlow - мягкое цветное свечение вокруг сосуда
@@ -452,9 +669,9 @@ public class MainController {
     }
 
 
-     // Создаёт SVGPath с формой колбы
+    // Создаёт SVGPath с формой колбы
 
-     private static SVGPath createFlaskShape() {
+    private static SVGPath createFlaskShape() {
         SVGPath path = new SVGPath();
         path.setContent(FLASK_PATH);
         return path;
@@ -768,7 +985,7 @@ public class MainController {
 
         // Кнопки снизу
         // Save убрана, потому что данные сохраняются сразу в БД
-        HBox buttons = new HBox(10, refreshBtn, addBtn, deleteBtn);
+        HBox buttons = new HBox(10, refreshBtn, addBtn, editBtn, deleteBtn);
         buttons.setPadding(new Insets(10));
         buttons.setStyle("-fx-background-color:#FFE4EC; " +
                 "-fx-border-color:#FFB6C1; -fx-border-width:1 0 0 0;");
@@ -780,6 +997,7 @@ public class MainController {
         refreshBtn.setStyle(btnStyle);
         addBtn.setStyle(btnStyle);
         deleteBtn.setStyle(btnStyle);
+        editBtn.setStyle(btnStyle);
 
         root.setStyle("-fx-background-color:#FFF0F5;");
         root.setCenter(table);

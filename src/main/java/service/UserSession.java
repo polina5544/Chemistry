@@ -19,13 +19,13 @@ public class UserSession {
     // Войти в систему
     public void login(User user) {
         this.currentUser = user;
-        System.out.println("Установлен пользователь: " + user.getLogin());
+        System.out.println("Текущий пользователь: " + user.getLogin());
     }
 
     // Выйти из системы
     public void logout() {
         this.currentUser = null;
-        System.out.println("UserSession: logout()");
+        System.out.println("Пользователь вышел из системы");
     }
 
     // Проверить, авторизован ли кто-то

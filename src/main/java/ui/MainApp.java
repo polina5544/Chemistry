@@ -20,29 +20,46 @@ public class MainApp extends Application {
 
     private final UserService userService = new UserService();
     private final UserSession userSession = new UserSession();
+    private Stage primaryStage;
 
     @Override
     public void start(Stage stage) {
+        this.primaryStage = stage;
 
         // 1: показываем окно входа/регистрации
-        // UserService при register/authenticate работает с PostgreSQL напрямую
-        LoginDialog loginDialog = new LoginDialog(userService, userSession);
-        boolean loggedIn = loginDialog.show();
-
-        if (!loggedIn) {
-            // Пользователь закрыл окно без входа
+        if (!showLoginDialog()) {
             Platform.exit();
             return;
         }
 
         // 2: открываем главное окно
-        // MainController получает userSession чтобы знать кто вошёл (для owner)
+        showMainWindow();
+    }
+
+    private boolean showLoginDialog() {
+        LoginDialog loginDialog = new LoginDialog(userService, userSession);
+        return loginDialog.show();
+    }
+
+    private void showMainWindow() {
         MainController controller = new MainController(userSession);
         Scene scene = new Scene(controller.getView(), 1100, 600);
 
-        stage.setTitle("Лабораторные образцы - " + userSession.getCurrentLogin());
-        stage.setScene(scene);
-        stage.show();
+        primaryStage.setTitle("Лабораторные образцы - " + userSession.getCurrentLogin());
+        primaryStage.setScene(scene);
+
+        primaryStage.setOnCloseRequest(event -> {
+            event.consume();
+            primaryStage.close();
+            userSession.logout();
+            if (showLoginDialog()) {
+                showMainWindow();
+            } else {
+                Platform.exit();
+            }
+        });
+
+        primaryStage.show();
     }
 
     public static void main(String[] args) {

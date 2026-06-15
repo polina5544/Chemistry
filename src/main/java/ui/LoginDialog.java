@@ -10,6 +10,8 @@ import javafx.scene.text.Font;
 import service.UserService;
 import service.UserSession;
 
+import java.util.Optional;
+
 //LoginDialog - окно авторизации/регистрации.
 // Показывается ДО главного окна (в MainApp.start()).
 // Пользователь выбирает - войти или зарегистрироваться
@@ -28,8 +30,6 @@ public class LoginDialog {
         this.session     = session;
     }
 
-
-//     Показывает диалог и ждёт результата
     public boolean show() {
         Dialog<Boolean> dialog = new Dialog<>();
         dialog.setTitle("Лабораторная система");
@@ -39,7 +39,7 @@ public class LoginDialog {
         // Скрываем стандартные кнопки - сделаем свои
         dialog.getDialogPane().lookupButton(ButtonType.CANCEL).setVisible(false);
 
-        // ── Заголовок ────────────────────────────────────────────────────────
+        // Заголовок
         Label titleLabel = new Label("Добро пожаловать!");
         titleLabel.setFont(Font.font("Georgia", 20));
         titleLabel.setTextFill(Color.web("#d63384"));
@@ -120,7 +120,7 @@ public class LoginDialog {
             dialog.getDialogPane().getScene().getWindow().sizeToScene();
         });
 
-        // ── Логика кнопки Войти/Зарегистрироваться
+        // Логика кнопки Войти/Зарегистрироваться
         actionBtn.setOnAction(e -> {
             String login = loginField.getText().trim();
             String pass  = passField.getText().trim();
@@ -144,7 +144,7 @@ public class LoginDialog {
                     User user = userService.authenticate(login, pass);
                     session.login(user);
                 }
-                // Закрываем диалог с результатом true
+
                 dialog.setResult(true);
                 dialog.close();
 
@@ -189,7 +189,7 @@ public class LoginDialog {
         passField.setOnAction(e -> actionBtn.fire());
         loginField.setOnAction(e -> passField.requestFocus());
 
-        var result = dialog.showAndWait();
+        Optional<Boolean> result = dialog.showAndWait();
         return result.isPresent() && result.get();
     }
 
